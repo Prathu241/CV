@@ -1,6 +1,5 @@
 # Production
 dist/
-/public/
  
 # Dependencies
 node_modules/
