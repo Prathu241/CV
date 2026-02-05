@@ -46,7 +46,7 @@ const { title } = Astro.props;
         <script>
             // Mouse Spotlight Effect
             const spotlight = document.getElementById('spotlight');
-            if (spotlight) {
+            if (spotlight && window.matchMedia("(hover: hover)").matches) {
                 document.addEventListener('mousemove', (e) => {
                     spotlight.style.opacity = '1';
                     spotlight.style.setProperty('--x', `${e.clientX}px`);

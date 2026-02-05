@@ -19,13 +19,20 @@ const isLoggedIn = isAuthenticated(Astro.cookies);
             <span class="text-primary">PRATHU</span>.DEV
         </span>
       </a>
-      <div class="hidden w-full md:block md:w-auto">
-        <ul class="font-medium flex flex-col p-4 md:p-0 mt-4 md:flex-row md:space-x-4 rtl:space-x-reverse md:mt-0">
+      <button data-collapse-toggle="navbar-default" type="button" class="inline-flex items-center p-2 w-10 h-10 justify-center text-sm text-gray-500 rounded-lg md:hidden hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-primary" aria-controls="navbar-default" aria-expanded="false" id="menu-toggle">
+          <span class="sr-only">Open main menu</span>
+          <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 17 14">
+              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 1h15M1 7h15M1 13h15"/>
+          </svg>
+      </button>
+
+      <div class="hidden w-full md:block md:w-auto" id="navbar-default">
+        <ul class="font-medium flex flex-col p-4 md:p-0 mt-4 md:flex-row md:space-x-4 rtl:space-x-reverse md:mt-0 bg-[#0a0a0f] md:bg-transparent border border-white/10 md:border-0 rounded-lg md:rounded-none">
           {['About', 'Experience', 'Projects', 'Skills'].map((item) => (
             <li>
-              <a href={`#${item.toLowerCase()}`} class="relative block py-2 px-3 text-gray-400 hover:text-white transition-colors duration-300 group">
+              <a href={`#${item.toLowerCase()}`} class="relative block py-2 px-3 text-gray-400 hover:text-white transition-colors duration-300 group hover:bg-white/5 md:hover:bg-transparent rounded md:rounded-none">
                 {item}
-                <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
+                <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full hidden md:block"></span>
               </a>
             </li>
           ))}
@@ -33,6 +40,17 @@ const isLoggedIn = isAuthenticated(Astro.cookies);
       </div>
     </div>
   </nav>
+
+  <script>
+      const menuToggle = document.getElementById('menu-toggle');
+      const navbar = document.getElementById('navbar-default');
+      
+      if (menuToggle && navbar) {
+          menuToggle.addEventListener('click', () => {
+              navbar.classList.toggle('hidden');
+          });
+      }
+  </script>
 
   <main>
     <!-- Hero / Header -->
