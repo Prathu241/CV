@@ -5,15 +5,21 @@ import dataFromFile from '../data/site-content.json';
 const CONTENT_FILE = path.join(process.cwd(), 'src', 'data', 'site-content.json');
 
 export function getContent() {
+    // IN PRODUCTION (Vercel): Always use the bundled data to avoid file system crashes
+    if (import.meta.env.PROD) {
+        return dataFromFile;
+    }
+
+    // IN DEVELOPMENT: Try reading from disk so edits appear instantly
     try {
-        // Try reading fresh from disk (Local Dev / Editable)
         if (fs.existsSync(CONTENT_FILE)) {
             const fileContent = fs.readFileSync(CONTENT_FILE, 'utf-8');
             return JSON.parse(fileContent);
         }
     } catch (e) {
-        // Fallback to bundled data
+        console.error("Local file read failed, falling back to import", e);
     }
+    
     return dataFromFile;
 }
 
