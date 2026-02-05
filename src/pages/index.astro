@@ -1,0 +1,321 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Section from '../components/Section.astro';
+import { getContent } from '../lib/content';
+import { isAuthenticated } from '../lib/auth';
+import EditModal from '../components/EditModal.astro';
+
+const data = getContent();
+const { skills, experience, projects, education, socialLinks, profile } = data;
+const isLoggedIn = isAuthenticated(Astro.cookies);
+---
+
+<Layout title="Pratham Sarawad | Pratham">
+  <!-- Navigation -->
+  <nav class="fixed w-full z-40 top-0 start-0 border-b border-white/5 bg-background/80 backdrop-blur-xl">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between mx-auto p-4">
+      <a href="#" class="flex items-center space-x-3 rtl:space-x-reverse group">
+        <span class="self-center text-xl font-bold whitespace-nowrap text-white group-hover:text-glow transition-all duration-300">
+            <span class="text-primary">PRATHU</span>.DEV
+        </span>
+      </a>
+      <div class="hidden w-full md:block md:w-auto">
+        <ul class="font-medium flex flex-col p-4 md:p-0 mt-4 md:flex-row md:space-x-4 rtl:space-x-reverse md:mt-0">
+          {['About', 'Experience', 'Projects', 'Skills'].map((item) => (
+            <li>
+              <a href={`#${item.toLowerCase()}`} class="relative block py-2 px-3 text-gray-400 hover:text-white transition-colors duration-300 group">
+                {item}
+                <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <!-- Hero / Header -->
+    <section class="min-h-screen flex items-center justify-center relative section-padding pt-32">
+        {isLoggedIn && (
+            <button onclick="window.openVisualEditor('profile')" class="absolute top-20 left-4 z-50 bg-primary/20 hover:bg-primary text-primary hover:text-black border border-primary p-2 rounded backdrop-blur-md transition-all duration-300 flex items-center gap-2 group">
+                <span class="text-xl">✎</span>
+                <span class="text-xs font-mono uppercase font-bold hidden group-hover:inline-block">Edit Profile</span>
+            </button>
+        )}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center w-full max-w-6xl mx-auto">
+            <div class="text-left order-2 md:order-1 animate-on-scroll">
+                <div class="inline-flex items-center px-4 py-2 border border-primary/30 bg-primary/5 text-primary text-xs font-mono tracking-widest mb-6 uppercase">
+                    <span class="w-1.5 h-1.5 bg-primary mr-3 animate-pulse"></span>
+                    System Online
+                </div>
+                
+                <h1 class="text-6xl md:text-8xl font-bold mb-6 tracking-tighter leading-[0.9] text-white">
+                    {profile.name.split(' ')[0]}<br/>
+                    <span class="glitch-text text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary" data-text={profile.name.split(' ')[1] || ""}>
+                        {profile.name.split(' ')[1] || ""}
+                    </span>
+                </h1>
+                
+                <p class="text-lg md:text-xl text-gray-400 mb-8 font-mono border-l-2 border-primary/50 pl-6 leading-relaxed max-w-lg">
+                    {profile.role}<br/>
+                    <span class="text-gray-500 text-sm mt-2 block">{profile.bio}</span>
+                </p>
+                
+                <div class="flex flex-wrap gap-4 mb-10">
+                    {socialLinks.map(link => (
+                         <a href={link.url} target="_blank" rel="noopener noreferrer" class="p-4 border border-white/10 bg-[#0a1525] hover:bg-primary hover:text-black hover:border-primary transition-all duration-300 group" aria-label={link.name}>
+                            <svg class="w-5 h-5 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24"><path d={link.icon}/></svg>
+                        </a>
+                    ))}
+                    <a href="/MY_RESUME-1.pdf" download class="inline-flex items-center px-8 py-4 bg-white text-black font-bold hover:bg-primary transition-all duration-300 tracking-wide uppercase text-sm border-2 border-white hover:border-primary">
+                        [ Download CV ]
+                    </a>
+                </div>
+            </div>
+
+            <div class="order-1 md:order-2 flex justify-center animate-on-scroll relative" style="animation-delay: 0.2s">
+                 <!-- Decorative elements behind profile -->
+                 <div class="absolute -right-10 -top-10 text-primary/10 font-mono text-9xl font-bold select-none opacity-50">01</div>
+                 
+                 <div class="relative w-72 h-72 md:w-96 md:h-96">
+                    <div class="absolute inset-0 border-2 border-primary/20 translate-x-4 translate-y-4"></div>
+                    <div class="absolute inset-0 bg-primary/5 backdrop-blur-sm -z-10"></div>
+                    
+                    <div class="relative w-full h-full bg-gray-900 overflow-hidden border border-white/10 group grayscale hover:grayscale-0 transition-all duration-500">
+                         <img 
+                            src={profile.image} 
+                            alt={profile.name} 
+                            class="w-full h-full object-cover" 
+                            onerror="this.src='https://ui-avatars.com/api/?name=Pratham+Sarawad&background=0a0a0f&color=00c3ff&size=512'" 
+                         />
+                         <!-- Cyber overlay -->
+                         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-80"></div>
+                         <div class="absolute bottom-4 left-4 font-mono text-xs text-primary">
+                            STATUS: ACTIVE<br/>
+                            ID: 123-321
+                         </div>
+                    </div>
+                 </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Me -->
+    <Section id="about" title="ABOUT ME">
+      <div class="cyber-card p-8 md:p-12 relative group">
+        {isLoggedIn && (
+            <button onclick="window.openVisualEditor('profile')" class="absolute top-4 right-4 z-10 bg-primary/20 hover:bg-primary text-primary hover:text-black border border-primary p-2 rounded backdrop-blur-md transition-all duration-300">
+                <span class="text-lg">✎</span>
+            </button>
+        )}
+        <div class="flex flex-col md:flex-row gap-8 items-start">
+            <div class="flex-1">
+                <p class="text-lg md:text-xl leading-relaxed text-gray-300 font-light mb-6" set:html={profile.about}></p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm font-mono text-gray-400">
+                    <div class="flex items-center gap-2">
+                        <span class="text-primary">></span> FOCUS: {profile.focus}
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-primary">></span> ROLE: {profile.role_detail}
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-primary">></span> STATUS: {profile.status}
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-primary">></span> LOC: {profile.location}
+                    </div>
+                </div>
+            </div>
+        </div>
+      </div>
+    </Section>
+
+    <!-- Education -->
+    <Section id="education" title="EDUCATION">
+        <div class="relative border-l border-white/10 ml-2 space-y-0">
+            {isLoggedIn && (
+                <div class="absolute -top-12 right-0 z-10">
+                    <button onclick="window.openVisualEditor('education')" class="bg-primary/20 hover:bg-primary text-primary hover:text-black border border-primary px-3 py-1 rounded backdrop-blur-md transition-all duration-300 font-mono text-xs uppercase">
+                        ✎ Edit Education
+                    </button>
+                </div>
+            )}
+            {education.map((edu, index) => (
+                <div class="relative pl-8 pb-12 last:pb-0 group">
+                    <div class="absolute -left-[5px] top-2 w-2.5 h-2.5 bg-black border border-gray-500 group-hover:border-primary group-hover:bg-primary transition-colors"></div>
+                    <div class="cyber-card p-6 flex flex-col md:flex-row justify-between items-start md:items-center group-hover:border-primary/50">
+                        <div>
+                            <h3 class="text-xl font-bold text-white uppercase tracking-wide">{edu.name}</h3>
+                            <p class="text-gray-400 font-mono text-sm mt-1">/ {edu.degree}</p>
+                        </div>
+                        <div class="mt-4 md:mt-0 text-primary font-mono text-sm border border-primary/20 px-3 py-1 bg-primary/5">
+                            [{edu.year}]
+                        </div>
+                    </div>
+                </div>
+            ))}
+        </div>
+    </Section>
+
+    <!-- Experience -->
+    <Section id="experience" title="EXPERIENCE">
+      <div class="relative border-l border-white/10 ml-2 space-y-8">
+        {isLoggedIn && (
+            <div class="absolute -top-12 right-0 z-10">
+                <button onclick="window.openVisualEditor('experience')" class="bg-primary/20 hover:bg-primary text-primary hover:text-black border border-primary px-3 py-1 rounded backdrop-blur-md transition-all duration-300 font-mono text-xs uppercase">
+                    ✎ Edit Experience
+                </button>
+            </div>
+        )}
+        {experience.map((exp, index) => (
+          <div class="relative pl-8 group">
+             <!-- Tech marker -->
+            <div class="absolute left-0 top-0 -translate-x-1/2 flex flex-col items-center">
+                <div class="w-3 h-3 bg-background border border-primary rotate-45 group-hover:bg-primary transition-colors"></div>
+            </div>
+            
+            <div class="cyber-card p-8 group-hover:border-l-4 group-hover:border-l-primary transition-all">
+               <div class="flex flex-col md:flex-row justify-between mb-6 border-b border-white/5 pb-4">
+                  <div>
+                    <h3 class="text-2xl font-bold text-white hover:text-primary transition-colors uppercase">{exp.role}</h3>
+                    <h4 class="text-md text-gray-400 font-mono mt-1">@ {exp.company}</h4>
+                  </div>
+                  <span class="mt-2 md:mt-0 text-xs font-mono text-primary bg-primary/10 px-3 py-2 h-fit border border-primary/20">
+                    TIMEFRAME: {exp.date}
+                  </span>
+               </div>
+               
+               <ul class="space-y-3">
+                   {exp.details.map(detail => (
+                       <li class="pl-4 border-l-2 border-white/10 text-gray-400 text-sm hover:border-primary hover:text-white transition-colors">
+                           {detail}
+                       </li>
+                   ))}
+               </ul>
+            </div>
+          </div>
+        ))}
+      </div>
+    </Section>
+
+    <!-- Projects -->
+    <Section id="projects" title="PROJECTS_DATABASE">
+      <div class="relative grid grid-cols-1 md:grid-cols-2 gap-6">
+        {isLoggedIn && (
+            <div class="absolute -top-12 right-0 z-10 w-full flex justify-end">
+                <button onclick="window.openVisualEditor('projects')" class="bg-primary/20 hover:bg-primary text-primary hover:text-black border border-primary px-3 py-1 rounded backdrop-blur-md transition-all duration-300 font-mono text-xs uppercase">
+                    ✎ Edit Projects
+                </button>
+            </div>
+        )}
+        {projects.slice(0, 2).map((project, index) => (
+          <div class="cyber-card group h-full flex flex-col">
+            <div class="h-48 bg-[#0a1525] relative overflow-hidden border-b border-white/5">
+                 <div class="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.02)_50%,transparent_75%,transparent_100%)] bg-[length:20px_20px]"></div>
+                 
+                 <div class="absolute top-4 right-4 bg-black border border-white/20 px-2 py-1 text-[10px] font-mono text-gray-400">
+                    PRJ_0{index + 1}
+                 </div>
+                 
+                 <!-- Hover overlay -->
+                 <div class="absolute inset-0 bg-primary/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300 flex items-center justify-center gap-4">
+                    <a href={project.github} class="p-3 bg-black border border-primary text-primary hover:bg-primary hover:text-black transition-colors">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                    </a>
+                 </div>
+            </div>
+            
+            <div class="p-6 flex flex-col flex-grow">
+                <h3 class="text-xl font-bold text-white mb-3 uppercase tracking-wider group-hover:text-primary transition-colors">{project.title}</h3>
+                <p class="text-gray-400 text-sm leading-relaxed mb-6 flex-grow font-light border-l border-white/10 pl-4">
+                  {project.desc}
+                </p>
+                
+                <div class="flex flex-wrap gap-2 pt-4 border-t border-white/5">
+                    {project.tech.map(t => (
+                        <span class="text-[10px] uppercase tracking-widest font-mono text-gray-500">
+                            #{t}
+                        </span>
+                    ))}
+                </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div class="mt-8 text-center">
+            <a href="/projects" class="inline-flex items-center px-6 py-3 border border-primary text-primary hover:bg-primary hover:text-black transition-all duration-300 uppercase tracking-widest text-sm group">
+                [ VIEW_ALL_PROJECTS ]
+                <svg class="w-4 h-4 ml-2 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+            </a>
+      </div>
+    </Section>
+
+    <!-- Skills -->
+    <Section id="skills" title="TECHNOLOGIES">
+      <div class="cyber-card p-8 relative">
+        {isLoggedIn && (
+            <button onclick="window.openVisualEditor('skills')" class="absolute top-4 right-4 z-10 bg-primary/20 hover:bg-primary text-primary hover:text-black border border-primary p-2 rounded backdrop-blur-md transition-all duration-300">
+                <span class="text-lg">✎</span>
+            </button>
+        )}
+          <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-8 justify-items-center mb-8">
+            {skills.slice(0, 8).map((skill) => (
+              <div class="flex flex-col items-center gap-3 group w-full">
+                <div class="w-16 h-16 bg-[#0a1525] flex items-center justify-center p-3 border border-white/10 group-hover:border-primary transition-all duration-300 relative clip-path-polygon">
+                     <img src={skill.icon} alt={skill.name} class="w-full h-full object-contain filter grayscale group-hover:grayscale-0 transition-all opacity-70 group-hover:opacity-100" />
+                </div>
+                <span class="text-xs font-mono text-gray-500 group-hover:text-primary transition-colors uppercase tracking-wider">{skill.name}</span>
+              </div>
+            ))}
+          </div>
+          
+          <div class="text-center pt-6 border-t border-white/5">
+                <a href="/skills" class="inline-block text-gray-400 hover:text-primary text-xs font-mono uppercase tracking-widest border-b border-transparent hover:border-primary transition-all pb-1">
+                    // EXPLORE_FULL_STACK ->
+                </a>
+          </div>
+      </div>
+    </Section>
+
+    <!-- Call to Action -->
+    <section class="section-padding py-32 text-center">
+        <div class="max-w-3xl mx-auto space-y-8 animate-on-scroll">
+            <h2 class="text-4xl md:text-5xl font-bold text-white">Let's build something <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">amazing</span> together.</h2>
+            <p class="text-xl text-gray-400">Available for freelance, contract, or collaboration on open source projects.</p>
+            
+            <div class="flex flex-wrap justify-center gap-6 mt-8">
+                <a href="mailto:prathamspr@gmail.com" class="px-8 py-4 bg-white text-black font-bold rounded-lg hover:bg-gray-200 transition-colors">
+                    Get in Touch
+                </a>
+                <a href="mailto:prathamspr@gmail.com?subject=Schedule%20a%20Call" class="px-8 py-4 glass-card border border-white/20 rounded-lg hover:border-primary/50 hover:text-primary transition-colors">
+                    Schedule a Call
+                </a>
+            </div>
+        </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-white/10 bg-black/40 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 py-8">
+      <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+        <div class="text-center md:text-left">
+          <span class="text-xl font-bold text-white"><span class="text-primary">PRATHU</span>DEV</span>
+        </div>
+        
+        <p class="text-gray-500 text-sm">
+            © 2026 Pratham Sarawad. Built with <span class="text-white">Astro</span> & <span class="text-white">Tailwind</span>.
+        </p>
+        
+        <div class="flex space-x-6">
+            <a href="#" class="text-gray-400 hover:text-primary text-sm transition-colors">Github</a>
+            <a href="#" class="text-gray-400 hover:text-primary text-sm transition-colors">LinkedIn</a>
+            <a href="#" class="text-gray-400 hover:text-primary text-sm transition-colors">Twitter</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+  
+  {isLoggedIn && <EditModal initialData={data} />}
+</Layout>

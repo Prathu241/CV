@@ -1,0 +1,201 @@
+---
+const { initialData } = Astro.props;
+---
+
+<div id="visual-editor-modal" class="fixed inset-0 z-[100] hidden">
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" id="modal-backdrop"></div>
+    
+    <!-- Modal Content -->
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-[#0f111a] border border-white/10 shadow-2xl animate-in fade-in zoom-in duration-200">
+        <div class="flex justify-between items-center p-4 border-b border-white/5 bg-black/20">
+            <h3 class="text-white font-mono uppercase tracking-widest text-sm" id="modal-title">Edit Content</h3>
+            <button id="modal-close" class="text-gray-400 hover:text-white">&times;</button>
+        </div>
+        
+        <div class="p-6 max-h-[70vh] overflow-y-auto custom-scrollbar" id="modal-form-container">
+            <!-- Dynamic Form Fields will be injected here -->
+        </div>
+        
+        <div class="p-4 border-t border-white/5 bg-black/20 flex justify-end gap-3">
+             <button id="modal-cancel" class="px-4 py-2 border border-white/10 text-xs font-mono text-gray-400 hover:text-white hover:border-white transition-colors uppercase">Cancel</button>
+             <button id="modal-save" class="px-6 py-2 bg-primary text-black font-bold text-xs font-mono uppercase hover:bg-white transition-colors">Save Changes</button>
+        </div>
+    </div>
+</div>
+
+<script define:vars={{ initialData }}>
+    // Store full content in window for easy access
+    window.siteContent = initialData;
+    
+    const modal = document.getElementById('visual-editor-modal');
+    const formContainer = document.getElementById('modal-form-container');
+    const modalTitle = document.getElementById('modal-title');
+    let currentSection = null;
+    let currentOriginalData = null;
+
+    // Open Modal Function (Global)
+    window.openVisualEditor = (sectionKey) => {
+        currentSection = sectionKey;
+        const data = window.siteContent[sectionKey];
+        currentOriginalData = JSON.parse(JSON.stringify(data)); // Deep copy
+        
+        modalTitle.innerText = `EDITING: ${sectionKey.toUpperCase()}`;
+        formContainer.innerHTML = ''; // Clear previous fields
+        
+        // Generate Form Fields
+        generateFields(data, sectionKey); // Pass top level
+        
+        modal.classList.remove('hidden');
+    };
+
+    function generateFields(data, context, parentKey = '') {
+        if (typeof data === 'string' || typeof data === 'number') {
+            createInputField(context, data, parentKey);
+        } else if (Array.isArray(data)) {
+            // Handle Arrays (Projects, Experience, Skills)
+            // For now, simpler approach: JSON Text Area for arrays or complex objects
+            // Or simple list of items
+            createJsonEditor(parentKey || context, data);
+        } else if (typeof data === 'object' && data !== null) {
+            // Recursive for objects
+            Object.keys(data).forEach(key => {
+                 const newKey = parentKey ? `${parentKey}.${key}` : key;
+                 if (typeof data[key] === 'string' || typeof data[key] === 'number') {
+                     createInputField(key, data[key], context); // context used as root usually
+                 } else {
+                     // Arrays or nested objects inside
+                     createJsonEditor(key, data[key], context);
+                 }
+            });
+        }
+    }
+
+    function createInputField(label, value, section) {
+        // Only for Profile mostly
+        const wrapper = document.createElement('div');
+        wrapper.className = 'mb-4';
+        
+        const labelEl = document.createElement('label');
+        labelEl.className = 'block text-xs font-mono text-gray-500 uppercase mb-1';
+        labelEl.innerText = label;
+        
+        let input;
+        if (value.length > 60) {
+            input = document.createElement('textarea');
+            input.rows = 4;
+            input.className = "w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none";
+        } else {
+             input = document.createElement('input');
+             input.type = 'text';
+             input.className = "w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none";
+        }
+        input.value = value;
+        input.dataset.key = label; // Simplified key tracking
+        input.dataset.section = section;
+        
+        wrapper.appendChild(labelEl);
+        wrapper.appendChild(input);
+        formContainer.appendChild(wrapper);
+    }
+
+    function createJsonEditor(label, value, section) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'mb-6 p-4 border border-white/5 bg-black/20';
+        
+        const labelEl = document.createElement('label');
+        labelEl.className = 'block text-xs font-mono text-primary uppercase mb-2';
+        labelEl.innerText = `${label} (Advanced Editor)`;
+        
+        const textarea = document.createElement('textarea');
+        textarea.className = 'w-full h-40 bg-black text-gray-300 font-mono text-xs p-2 border border-white/10 focus:border-primary focus:outline-none';
+        textarea.value = JSON.stringify(value, null, 2);
+        textarea.dataset.isJson = 'true';
+        textarea.dataset.key = label;
+        textarea.dataset.section = section;
+        
+        const help = document.createElement('p');
+        help.className = 'text-[10px] text-gray-600 mt-1 font-mono';
+        help.innerText = 'Edit the JSON array directly. Be careful with syntax.';
+        
+        wrapper.appendChild(labelEl);
+        wrapper.appendChild(textarea);
+        wrapper.appendChild(help);
+        formContainer.appendChild(wrapper);
+    }
+
+    // Handlers
+    document.getElementById('modal-close').onclick = () => modal.classList.add('hidden');
+    document.getElementById('modal-cancel').onclick = () => modal.classList.add('hidden');
+    document.getElementById('modal-backdrop').onclick = (e) => {
+        if (e.target.id === 'modal-backdrop') modal.classList.add('hidden');
+    };
+
+    document.getElementById('modal-save').onclick = async () => {
+        const btn = document.getElementById('modal-save');
+        btn.innerText = 'Saving...';
+        
+        try {
+            // Reconstruct data
+            const inputs = formContainer.querySelectorAll('input, textarea');
+            const updatedData = { ...window.siteContent }; // Start with current state
+            
+            // This is a naive reconstruction, better to merge specific section
+            // Because we pass 'sectionKey' (e.g., 'profile'), we primarily update that
+            
+            const sectionUpdate = { ...window.siteContent[currentSection] };
+            
+            inputs.forEach(input => {
+                const key = input.dataset.key;
+                let val = input.value;
+                
+                if (input.dataset.isJson === 'true') {
+                    try {
+                        val = JSON.parse(val);
+                        // If it's the whole array (e.g. skills), we replace the whole section property
+                        if (currentSection === key || (Array.isArray(window.siteContent[currentSection]) && key === currentSection)) {
+                            // It's the root array of this section
+                             // Wait, logic check: if I send 'skills', I get one JSON editor for 'skills'.
+                             // The key is 'skills'. currentSection is 'skills'.
+                             updatedData[currentSection] = val;
+                             return;
+                        } else {
+                            // It's a property inside an object (e.g. details in experience?)
+                            sectionUpdate[key] = val;
+                        }
+                    } catch (e) {
+                        alert(`Invalid JSON in ${key}`);
+                        throw e;
+                    }
+                } else {
+                   // Simple key update on object
+                   if (typeof sectionUpdate === 'object' && !Array.isArray(sectionUpdate)) {
+                       sectionUpdate[key] = val;
+                   }
+                }
+            });
+
+            // If it wasn't a direct array replacement, assign the updated object back
+            if (!Array.isArray(updatedData[currentSection])) {
+                updatedData[currentSection] = sectionUpdate;
+            }
+
+            // Send to API
+            const response = await fetch('/api/content/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedData)
+            });
+
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                alert('Failed to save');
+            }
+        } catch (err) {
+            console.error(err);
+        } finally {
+            btn.innerText = 'SAVE CHANGES';
+        }
+    };
+</script>

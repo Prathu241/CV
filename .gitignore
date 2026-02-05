@@ -1,0 +1,30 @@
+# Production
+dist/
+/public/
+ 
+# Dependencies
+node_modules/
+ 
+# Environment
+.env
+.env.*
+!.env.example
+ 
+# Astro
+.astro/
+ 
+# Vercel
+.vercel/
+ 
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+ 
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store

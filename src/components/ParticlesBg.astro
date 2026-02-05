@@ -1,0 +1,84 @@
+<div id="tsparticles" class="fixed inset-0 -z-10 pointer-events-none"></div>
+
+<script>
+  import { tsParticles } from "@tsparticles/engine";
+  import { loadSlim } from "@tsparticles/slim";
+
+  // Initialize tsparticles
+  (async () => {
+    await loadSlim(tsParticles);
+
+    await tsParticles.load({
+      id: "tsparticles",
+      options: {
+        background: {
+          color: {
+            value: "transparent", // Transparent so our CSS grid shows through
+          },
+        },
+        fpsLimit: 120,
+        interactivity: {
+          events: {
+            onClick: {
+              enable: true,
+              mode: "push",
+            },
+            onHover: {
+              enable: true,
+              mode: "grab", 
+            },
+          },
+          modes: {
+            grab: {
+                distance: 140,
+                links: {
+                    opacity: 0.5
+                }
+            },
+            push: {
+              quantity: 4,
+            },
+          },
+        },
+        particles: {
+          color: {
+            value: ["#00c3ff", "#ffffff"], // Sky blue & white
+          },
+          links: {
+            color: "#00c3ff",
+            distance: 150,
+            enable: true, // Enable constallation effect
+            opacity: 0.15, 
+            width: 1,
+          },
+          move: {
+            direction: "none",
+            enable: true,
+            outModes: {
+              default: "bounce",
+            },
+            random: true,
+            speed: 0.5, // Slower movement
+            straight: false,
+          },
+          number: {
+            density: {
+              enable: true,
+            },
+            value: 40, // Reduced density
+          },
+          opacity: {
+            value: { min: 0.1, max: 0.5 },
+          },
+          shape: {
+            type: "circle",
+          },
+          size: {
+            value: { min: 1, max: 2 },
+          },
+        },
+        detectRetina: true,
+      },
+    });
+  })();
+</script>

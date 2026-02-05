@@ -1,0 +1,50 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Section from '../components/Section.astro';
+import { getContent } from '../lib/content';
+
+const { skills } = getContent();
+---
+
+<Layout title="All Skills | Pratham Sarawad">
+  <main class="pt-32 pb-16 min-h-screen">
+    <Section id="all-skills" title="TECH_STACK_FULL">
+      <div class="mb-8">
+        <a href="/" class="inline-flex items-center text-primary font-mono text-sm hover:underline">
+            ← BACK_TO_MAIN_PAGE
+        </a>
+      </div>
+
+      <div class="cyber-card p-8 md:p-12">
+          <div class="grid grid-cols-2 small:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-8 justify-items-center">
+            {skills.map((skill) => (
+              <div class="flex flex-col items-center gap-3 group w-full animate-on-scroll">
+                <div class="w-20 h-20 bg-[#0a1525] flex items-center justify-center p-4 border border-white/10 group-hover:border-primary transition-all duration-300 relative clip-path-polygon">
+                     <img src={skill.icon} alt={skill.name} class="w-full h-full object-contain filter grayscale group-hover:grayscale-0 transition-all opacity-70 group-hover:opacity-100" />
+                </div>
+                <span class="text-xs font-mono text-gray-400 group-hover:text-primary transition-colors uppercase tracking-wider text-center">{skill.name}</span>
+              </div>
+            ))}
+          </div>
+      </div>
+      
+      <div class="mt-12 p-6 border border-white/10 bg-[#0a1525]/50 backdrop-blur-md">
+         <h3 class="text-primary font-mono mb-4 text-center">SYSTEM_CAPABILITIES</h3>
+         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm text-gray-400 font-light">
+            <div class="text-center md:text-left">
+                <strong class="text-white block mb-1">FRONTEND ARCHITECTURE</strong>
+                <p>Building responsive, high-performance interfaces with modern frameworks like React and Astro, focusing on component reusability and state management.</p>
+            </div>
+            <div class="text-center md:text-left">
+                <strong class="text-white block mb-1">BACKEND SYSTEMS</strong>
+                <p>Designing scalable APIs and server-side logic using Node.js and Python (Flask/Django), ensuring secure data handling and efficient processing.</p>
+            </div>
+            <div class="text-center md:text-left">
+                <strong class="text-white block mb-1">AI INTEGRATION</strong>
+                <p>Implementing machine learning models and NLP capabilities into web applications to create intelligent, adaptive user experiences.</p>
+            </div>
+         </div>
+      </div>
+    </Section>
+  </main>
+</Layout>

@@ -1,0 +1,169 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { isAuthenticated, destroySession } from '../../lib/auth';
+import { getContent } from '../../lib/content';
+
+if (!isAuthenticated(Astro.cookies)) {
+  return Astro.redirect('/admin/login');
+}
+
+// Handle Logout
+if (Astro.request.method === "POST") {
+    try {
+        const formData = await Astro.request.formData();
+        if (formData.get('action') === 'logout') {
+             destroySession(Astro.cookies);
+             return Astro.redirect('/admin/login');
+        }
+    } catch (e) {}
+}
+
+const currentContent = getContent();
+const contentString = JSON.stringify(currentContent, null, 2);
+---
+
+<Layout title="Master Control | Admin">
+  <div class="min-h-screen pt-24 px-4 pb-10">
+      <div class="max-w-7xl mx-auto">
+          <div class="flex justify-between items-center mb-8">
+              <div>
+                  <h1 class="text-3xl font-bold text-primary mb-2">MASTER_CONTROL_PANEL</h1>
+                  <p class="text-gray-400 font-mono text-sm">SECURE_CONNECTION_ESTABLISHED</p>
+              </div>
+              
+              <div class="flex gap-4">
+                  <a href="/" target="_blank" class="px-4 py-2 border border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white transition-colors font-mono text-sm">
+                      [ VIEW_SITE ]
+                  </a>
+                  <form method="POST">
+                      <input type="hidden" name="action" value="logout" />
+                      <button type="submit" class="px-4 py-2 border border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-colors font-mono text-sm">
+                          [ TERMINATE_SESSION ]
+                      </button>
+                  </form>
+              </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <!-- Quick Info / Help -->
+              <div class="lg:col-span-1 space-y-6">
+                  <div class="cyber-card p-6">
+                      <h3 class="text-xl font-bold text-white mb-4 border-b border-white/10 pb-2">STATUS</h3>
+                      <div class="space-y-2 font-mono text-sm">
+                          <div class="flex justify-between">
+                              <span class="text-gray-400">SYSTEM:</span>
+                              <span class="text-primary">ONLINE</span>
+                          </div>
+                          <div class="flex justify-between">
+                              <span class="text-gray-400">MODE:</span>
+                              <span class="text-secondary">WRITE_ACCESS</span>
+                          </div>
+                      </div>
+                  </div>
+
+                  <div class="cyber-card p-6">
+                      <h3 class="text-xl font-bold text-white mb-4 border-b border-white/10 pb-2">UPLOADS</h3>
+                      <form id="upload-form" class="space-y-4">
+                          <div>
+                              <label class="block text-xs font-mono text-gray-400 mb-2">SELECT IMAGE</label>
+                              <input type="file" name="file" accept="image/*" class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"/>
+                          </div>
+                          <button type="submit" class="w-full py-2 bg-white/5 border border-white/10 hover:border-primary hover:text-primary transition-colors font-mono text-xs">
+                              [ UPLOAD_ASSET ]
+                          </button>
+                          <div id="upload-status" class="text-xs font-mono text-center hidden"></div>
+                      </form>
+                  </div>
+              </div>
+
+              <!-- Main Editor -->
+              <div class="lg:col-span-2">
+                  <div class="cyber-card p-6 h-full flex flex-col">
+                      <h3 class="text-xl font-bold text-white mb-4 border-b border-white/10 pb-2">DATA_CORE</h3>
+                      <p class="text-xs text-gray-500 mb-4 font-mono">WARNING: Editing raw JSON. Validate syntax before saving.</p>
+                      
+                      <div class="flex-grow relative">
+                          <textarea id="json-editor" class="w-full h-[600px] bg-[#050a14] text-green-400 font-mono text-sm p-4 border border-white/10 focus:border-primary outline-none resize-y" spellcheck="false">{contentString}</textarea>
+                      </div>
+                      
+                      <div class="mt-4 flex justify-end items-center gap-4">
+                          <span id="save-status" class="text-xs font-mono text-primary hidden"></span>
+                          <button id="save-btn" class="px-6 py-3 bg-primary text-black font-bold uppercase tracking-wider hover:bg-white transition-colors">
+                              [ SAVE_CHANGES ]
+                          </button>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </div>
+  </div>
+
+  <script>
+      // Save Data Handler
+      const saveBtn = document.getElementById('save-btn');
+      const editor = document.getElementById('json-editor');
+      const status = document.getElementById('save-status');
+
+      saveBtn?.addEventListener('click', async () => {
+          try {
+              const startText = saveBtn.innerText;
+              saveBtn.innerText = "[ PROCESSING... ]";
+              saveBtn.setAttribute('disabled', 'true');
+              
+              const json = JSON.parse((editor as HTMLTextAreaElement).value);
+              
+              const res = await fetch('/api/content/update', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(json)
+              });
+              
+              if (res.ok) {
+                  status.innerText = "update_complete::success";
+                  status.classList.remove('hidden');
+                  status.classList.add('text-primary');
+                  setTimeout(() => status.classList.add('hidden'), 3000);
+              } else {
+                  throw new Error('Save failed');
+              }
+          } catch (e) {
+              alert('INVALID_SYNTAX: Please check your JSON format.');
+          } finally {
+              saveBtn.innerText = "[ SAVE_CHANGES ]";
+              saveBtn.removeAttribute('disabled');
+          }
+      });
+
+      // Upload Handler
+      const uploadForm = document.getElementById('upload-form');
+      const uploadStatus = document.getElementById('upload-status');
+      
+      uploadForm?.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const formData = new FormData(e.target as HTMLFormElement);
+          const fileInput = (e.target as HTMLFormElement).querySelector('input[type="file"]') as HTMLInputElement;
+
+          if (!fileInput.files?.length) return;
+          
+          try {
+              uploadStatus.innerText = "uploading...";
+              uploadStatus.classList.remove('hidden');
+              
+              const res = await fetch('/api/upload', {
+                  method: 'POST',
+                  body: formData
+              });
+              
+              const data = await res.json();
+              if (res.ok) {
+                  uploadStatus.innerText = `SAVED_AT: ${data.url}`;
+                  // Copy to clipboard option or just show it
+              } else {
+                  uploadStatus.innerText = "UPLOAD_FAILED";
+              }
+          } catch (e) {
+              uploadStatus.innerText = "ERROR_CONNECTION";
+          }
+      });
+  </script>
+</Layout>

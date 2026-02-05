@@ -1,0 +1,25 @@
+---
+interface Props {
+  id: string;
+  class?: string;
+  title?: string;
+}
+
+const { id, class: className, title } = Astro.props;
+---
+
+<section id={id} class:list={["section-padding relative", className]}>
+  {title && (
+    <div class="mb-16 animate-on-scroll flex items-center gap-4">
+      <div class="w-2 h-8 bg-primary"></div>
+      <h2 class="text-4xl md:text-5xl font-bold text-white uppercase tracking-tighter" data-text={title}>
+        {title} <span class="text-primary">.</span>
+      </h2>
+      <div class="h-[1px] flex-grow bg-white/10 hidden md:block"></div>
+      <div class="text-xs font-mono text-gray-600 hidden md:block">[ SEC_0{id === 'about' ? '1' : id === 'experience' ? '2' : id === 'projects' ? '3' : '4'} ]</div>
+    </div>
+  )}
+  <div class="animate-on-scroll">
+    <slot />
+  </div>
+</section>
