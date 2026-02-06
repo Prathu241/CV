@@ -26,11 +26,11 @@ if (Astro.request.method === "POST") {
 ---
 
 <Layout title="Visual Editor Login">
-  <div class="min-h-screen flex items-center justify-center bg-[#0a0a0f] text-white">
-    <div class="w-full max-w-md p-8 border border-white/10 bg-[#0f111a]">
+  <div class="min-h-screen flex items-center justify-center bg-background text-text-main">
+    <div class="w-full max-w-md p-8 border border-border bg-surface">
       <div class="mb-8 text-center">
         <h1 class="text-2xl font-bold tracking-tighter mb-2">VISUAL EDITOR ACCESS</h1>
-        <p class="text-gray-400 text-sm font-mono">Enter credentials to enable edit mode</p>
+        <p class="text-text-muted text-sm font-mono">Enter credentials to enable edit mode</p>
       </div>
 
       {error && (
@@ -41,37 +41,37 @@ if (Astro.request.method === "POST") {
 
       <form method="POST" class="space-y-6">
         <div>
-          <label class="block text-xs font-mono text-gray-500 uppercase tracking-widest mb-2">Username</label>
+          <label class="block text-xs font-mono text-text-dim uppercase tracking-widest mb-2">Username</label>
           <input 
             type="text" 
             name="username" 
             required
-            class="w-full bg-black/50 border border-white/10 p-3 text-white focus:border-primary focus:outline-none transition-colors font-mono"
+            class="w-full bg-background/50 border border-border p-3 text-text-main focus:border-primary focus:outline-none transition-colors font-mono"
             placeholder="editor"
           />
         </div>
 
         <div>
-           <label class="block text-xs font-mono text-gray-500 uppercase tracking-widest mb-2">Password</label>
+           <label class="block text-xs font-mono text-text-dim uppercase tracking-widest mb-2">Password</label>
            <input 
             type="password" 
             name="password" 
             required
-            class="w-full bg-black/50 border border-white/10 p-3 text-white focus:border-primary focus:outline-none transition-colors font-mono"
+            class="w-full bg-background/50 border border-border p-3 text-text-main focus:border-primary focus:outline-none transition-colors font-mono"
             placeholder="••••••••"
           />
         </div>
 
         <button 
           type="submit"
-          class="w-full bg-primary text-black font-bold uppercase tracking-widest py-4 hover:bg-white hover:text-black transition-all duration-300"
+          class="w-full bg-primary text-black font-bold uppercase tracking-widest py-4 hover:bg-text-main hover:text-background transition-all duration-300"
         >
           Initialize Session
         </button>
       </form>
       
       <div class="mt-6 text-center">
-          <a href="/" class="text-xs font-mono text-gray-500 hover:text-white transition-colors">[ Return to Signal ]</a>
+          <a href="/" class="text-xs font-mono text-text-dim hover:text-text-main transition-colors">[ Return to Signal ]</a>
       </div>
     </div>
   </div>
