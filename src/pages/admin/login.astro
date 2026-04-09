@@ -1,16 +1,28 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import { isAuthenticated } from '../../lib/auth';
+import { AUTH_CONFIGURED, isAuthenticated } from '../../lib/auth';
+
+Astro.response.headers.set('Cache-Control', 'no-store');
+Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
 
 if (isAuthenticated(Astro.cookies)) {
-  return Astro.redirect('/admin');
+  return Astro.redirect('/');
 }
+
+const authConfigured = AUTH_CONFIGURED;
 ---
 
 <Layout title="Admin Login | Pratham Sarawad">
+  <meta slot="head" name="robots" content="noindex, nofollow, noarchive" />
   <div class="min-h-screen flex items-center justify-center pt-20">
     <div class="cyber-card p-10 max-w-md w-full">
       <h1 class="text-3xl font-bold text-primary mb-6 text-center glitch-text" data-text="SYSTEM_ACCESS">SYSTEM_ACCESS</h1>
+
+      {!authConfigured && (
+        <div class="mb-6 rounded-lg border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm text-amber-200">
+          Editor access is not configured on this deployment.
+        </div>
+      )}
       
       <form id="login-form" class="space-y-6">
         <div>
@@ -49,7 +61,7 @@ if (isAuthenticated(Astro.cookies)) {
             });
             
             if (res.ok) {
-                window.location.href = '/admin';
+              window.location.href = '/';
             } else {
                 errorMsg?.classList.remove('hidden');
             }

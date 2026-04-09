@@ -1,6 +1,5 @@
 ---
 import '../styles/global.css';
-import ParticlesBg from '../components/ParticlesBg.astro';
 
 interface Props {
 	title: string;
@@ -13,51 +12,47 @@ const { title } = Astro.props;
 <html lang="en" class="scroll-smooth">
 	<head>
 		<meta charset="UTF-8" />
-		<meta name="description" content="Pratham Sarawad - Computer Science Student & Tech Enthusiast" />
+        <meta name="description" content="Pratham Sarawad - Computer science student building thoughtful web experiences and practical software." />
 		<meta name="viewport" content="width=device-width" />
+        <script is:inline>
+            try {
+                if (sessionStorage.getItem('initial-load-complete') === 'true') {
+                    document.documentElement.classList.add('has-initial-load-complete');
+                    const style = document.createElement('style');
+                    style.textContent = '.initial-loader{display:none!important}.has-initial-load-complete body.page-preloading{overflow:auto!important}';
+                    document.head.appendChild(style);
+                }
+            } catch {
+            }
+        </script>
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2" />
 		<meta name="generator" content={Astro.generator} />
+        <slot name="head" />
         
         <!-- Google Fonts -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
         
 		<title>{title}</title>
 	</head>
-	<body class="bg-background text-white relative flex flex-col min-h-screen overflow-x-hidden selection:bg-primary/30 selection:text-primary">
-        
-        <!-- Interactive Spotlight -->
-        <div id="spotlight" class="pointer-events-none fixed inset-0 z-30 transition-opacity duration-300 opacity-0" style="background: radial-gradient(600px circle at var(--x) var(--y), rgba(0, 195, 255, 0.12), transparent 80%);"></div>
-
-        <!-- Professional Dot Grid Background -->
-        <div class="fixed inset-0 z-0 pointer-events-none bg-[radial-gradient(#1a2c42_1px,transparent_1px)] bg-[length:20px_20px] opacity-30"></div>
-
-        <!-- Noise Texture Overlay -->
-        <div class="fixed inset-0 pointer-events-none z-20 opacity-[0.03] mix-blend-overlay" style="background-image: url(&quot;data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E&quot;);"></div>
-        
-        <!-- Background Particles -->
-        <div class="fixed inset-0 z-0 pointer-events-none">
-             <ParticlesBg />
+	<body class="bg-background text-slate-100 relative flex flex-col min-h-screen overflow-x-hidden selection:bg-primary/30 selection:text-white">
+    <div class="fixed inset-0 z-0 pointer-events-none bg-[radial-gradient(circle_at_15%_20%,rgba(34,211,238,0.12),transparent_30%),radial-gradient(circle_at_85%_12%,rgba(59,130,246,0.13),transparent_32%),linear-gradient(180deg,#04070d_0%,#070d17_100%)]"></div>
+    <div class="fixed inset-0 z-0 pointer-events-none opacity-[0.02]" style="background-image: linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px); background-size: 120px 120px;"></div>
+        <div id="initial-loader" class="initial-loader" aria-live="polite" aria-label="Loading page">
+            <div class="initial-loader__inner">
+                <p class="initial-loader__label">Loading Experience</p>
+                <div class="initial-loader__bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                    <div id="initial-loader-bar" class="initial-loader__bar-fill"></div>
+                </div>
+                <p id="initial-loader-count" class="initial-loader__count">0%</p>
+            </div>
         </div>
+    <div class="route-transition-overlay"></div>
         
 		<slot />
 
         <script>
-            // Mouse Spotlight Effect
-            const spotlight = document.getElementById('spotlight');
-            if (spotlight && window.matchMedia("(hover: hover)").matches) {
-                document.addEventListener('mousemove', (e) => {
-                    spotlight.style.opacity = '1';
-                    spotlight.style.setProperty('--x', `${e.clientX}px`);
-                    spotlight.style.setProperty('--y', `${e.clientY}px`);
-                });
-                
-                document.addEventListener('mouseleave', () => {
-                     spotlight.style.opacity = '0';
-                });
-            }
-
             // Simple Intersection Observer for scroll animations
             const observerOptions = {
                 root: null,
@@ -73,9 +68,165 @@ const { title } = Astro.props;
                 });
             }, observerOptions);
 
-            document.addEventListener('DOMContentLoaded', () => {
+            const setupScrollReveal = () => {
                 const hiddenElements = document.querySelectorAll('.animate-on-scroll');
                 hiddenElements.forEach((el) => observer.observe(el));
+            };
+
+            const setupMagnetic = () => {
+                document.querySelectorAll('.magnetic').forEach((el) => {
+                    el.addEventListener('pointermove', (event) => {
+                        const rect = el.getBoundingClientRect();
+                        const x = event.clientX - rect.left - rect.width / 2;
+                        const y = event.clientY - rect.top - rect.height / 2;
+                        el.style.transform = `translate(${x * 0.1}px, ${y * 0.1}px)`;
+                    });
+
+                    el.addEventListener('pointerleave', () => {
+                        el.style.transform = 'translate(0px, 0px)';
+                    });
+                });
+            };
+
+            const setupParallax = () => {
+                const targets = document.querySelectorAll('[data-parallax-speed]');
+                if (!targets.length) return;
+
+                const update = () => {
+                    const scrollY = window.scrollY;
+                    targets.forEach((el) => {
+                        const speed = Number(el.getAttribute('data-parallax-speed') || '0');
+                        el.style.setProperty('--parallax-y', `${scrollY * speed}px`);
+                    });
+                    requestAnimationFrame(update);
+                };
+
+                requestAnimationFrame(update);
+            };
+
+            const setupRouteTransitions = () => {
+                document.querySelectorAll('a[href]').forEach((link) => {
+                    link.addEventListener('click', (event) => {
+                        if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+                            return;
+                        }
+
+                        const href = link.getAttribute('href') || '';
+                        if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:') || link.hasAttribute('download') || link.target === '_blank') {
+                            return;
+                        }
+
+                        let targetUrl;
+                        try {
+                            targetUrl = new URL(href, window.location.href);
+                        } catch {
+                            return;
+                        }
+
+                        if (targetUrl.origin !== window.location.origin) return;
+
+                        const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+                        const next = `${targetUrl.pathname}${targetUrl.search}${targetUrl.hash}`;
+                        if (current === next) return;
+
+                        event.preventDefault();
+                        document.body.classList.add('page-leaving');
+                        window.setTimeout(() => {
+                            window.location.href = targetUrl.href;
+                        }, 320);
+                    });
+                });
+            };
+
+            const setupInitialLoader = () => {
+                // Check if this is the first visit in this session
+                const alreadyLoaded = sessionStorage.getItem('initial-load-complete');
+                
+                const loader = document.getElementById('initial-loader');
+                const bar = document.getElementById('initial-loader-bar');
+                const count = document.getElementById('initial-loader-count');
+                if (!loader || !bar || !count) return;
+
+                // If already loaded in this session, hide the loader immediately
+                if (alreadyLoaded) {
+                    document.documentElement.classList.add('has-initial-load-complete');
+                    loader.classList.add('is-hidden');
+                    return;
+                }
+
+                document.body.classList.add('page-preloading');
+
+                const start = performance.now();
+                let progress = 0;
+                let readyToFinish = false;
+                let rafId;
+
+                const updateUI = (value) => {
+                    const safe = Math.max(0, Math.min(100, Math.floor(value)));
+                    bar.style.transform = `scaleX(${safe / 100})`;
+                    count.textContent = `${safe}%`;
+                };
+
+                const finish = () => {
+                    updateUI(100);
+                    loader.classList.add('is-hidden');
+                    sessionStorage.setItem('initial-load-complete', 'true');
+                    document.documentElement.classList.add('has-initial-load-complete');
+                    window.setTimeout(() => {
+                        document.body.classList.remove('page-preloading');
+                    }, 450);
+                };
+
+                const tick = () => {
+                    const elapsed = performance.now() - start;
+                    const syntheticTarget = Math.min(92, 14 + elapsed / 22);
+                    const target = readyToFinish ? 100 : syntheticTarget;
+
+                    if (progress < target) {
+                        const step = readyToFinish
+                            ? Math.max(1.25, (100 - progress) * 0.14)
+                            : Math.max(0.34, (target - progress) * 0.1);
+                        progress = Math.min(target, progress + step);
+                    }
+
+                    updateUI(progress);
+
+                    if (progress >= 100) {
+                        finish();
+                        return;
+                    }
+
+                    rafId = window.requestAnimationFrame(tick);
+                };
+
+                const unlockReadyState = () => {
+                    const elapsed = performance.now() - start;
+                    const minimumMs = 1850;
+                    const delay = Math.max(0, minimumMs - elapsed);
+                    window.setTimeout(() => {
+                        readyToFinish = true;
+                    }, delay);
+                };
+
+                window.addEventListener('load', unlockReadyState, { once: true });
+                rafId = window.requestAnimationFrame(tick);
+
+                window.addEventListener('beforeunload', () => {
+                    if (rafId) window.cancelAnimationFrame(rafId);
+                }, { once: true });
+            };
+
+            document.addEventListener('DOMContentLoaded', () => {
+                setupInitialLoader();
+                setupScrollReveal();
+                setupMagnetic();
+                setupParallax();
+                setupRouteTransitions();
+                document.body.classList.remove('page-leaving');
+            });
+
+            window.addEventListener('pageshow', () => {
+                document.body.classList.remove('page-leaving');
             });
         </script>
 	</body>

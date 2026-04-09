@@ -10,13 +10,14 @@ const { id, class: className, title } = Astro.props;
 
 <section id={id} class:list={["section-padding relative", className]}>
   {title && (
-    <div class="mb-16 animate-on-scroll flex items-center gap-4">
-      <div class="w-2 h-8 bg-primary"></div>
-      <h2 class="text-4xl md:text-5xl font-bold text-white uppercase tracking-tighter" data-text={title}>
-        {title} <span class="text-primary">.</span>
-      </h2>
-      <div class="h-[1px] flex-grow bg-white/10 hidden md:block"></div>
-      <div class="text-xs font-mono text-gray-600 hidden md:block">[ SEC_0{id === 'about' ? '1' : id === 'experience' ? '2' : id === 'projects' ? '3' : '4'} ]</div>
+    <div class="mb-10 animate-on-scroll flex items-end gap-4">
+      <div class="w-1 h-10 rounded-full bg-gradient-to-b from-primary to-secondary"></div>
+      <div>
+        <h2 class="text-3xl md:text-4xl font-semibold text-white tracking-tight">
+          {title}
+        </h2>
+      </div>
+      <div class="h-px flex-grow bg-gradient-to-r from-primary/35 to-transparent hidden md:block mb-2"></div>
     </div>
   )}
   <div class="animate-on-scroll">

@@ -1,9 +1,9 @@
 {
   "profile": {
     "name": "Pratham Sarawad",
-    "role": "Software_Developer | Open_Source_Contributor",
-    "bio": "I design and build scalable applications, intelligent systems, and real-world tech solutions.\nFocused on clean architecture, performance, and impact-driven development, Leading the Team to success",
-    "about": "I’m a <span class=\"text-primary font-bold\">DEVELOPER </span>who enjoys building systems that solve real-world problems — from smart agriculture to open-source communities. I actively work with AI, backend systems, and emerging tech, and I love turning ideas into working products.",
+    "role": "Software Developer | Open Source Contributor",
+    "bio": "I design and build scalable applications, intelligent systems, and real-world tech solutions.\nFocused on clean architecture, performance, and impact-driven development, leading teams to success.",
+    "about": "I’m a DEVELOPER who enjoys building systems that solve real-world problems — from smart agriculture to open-source communities. I actively work with AI, backend systems, and emerging tech, and I love turning ideas into working products.",
     "email": "prathamspr@gmail.com",
     "image": "/profile-new.png?v=3",
     "focus": "AI/ML",
@@ -109,6 +109,26 @@
   ],
   "projects": [
     {
+      "title": "Project Management Software",
+      "desc": "An all-in-one platform to manage projects, timelines, tasks, communication, and documents in one centralized workspace.",
+      "tech": [
+        "Tech"
+      ],
+      "github": "https://github.com/Prathu241/Societal_problems.git",
+      "link": "https://sip.prathudev.in/login"
+    },
+    {
+      "title": "Eduvillage Hub",
+      "desc": "An interactive learning platform where students take tests, access textbooks, and learn through simulations, while teachers create visual flowcharts and diagrams to simplify concepts.",
+      "tech": [
+        "TypeScript",
+        "JavaScript",
+        "CSS"
+      ],
+      "github": "https://github.com/Prathu241/eduvillage-hub.git",
+      "link": "https://chittoor.prathudev.in"
+    },
+    {
       "title": "Agri Chatbot",
       "desc": "AI-powered voice and text assistant delivering instant, reliable agricultural guidance.",
       "tech": [
@@ -116,8 +136,8 @@
         "NLP",
         "Flask"
       ],
-      "link": "https://github.com/Prathu241/open_agri.git",
-      "github": "https://github.com/Prathu241/open_agri.git"
+      "github": "https://github.com/Prathu241/open_agri.git",
+      "link": "https://github.com/Prathu241/open_agri.git"
     },
     {
       "title": "Chittoor Website",
@@ -127,8 +147,8 @@
         "CSS",
         "JS"
       ],
-      "link": "https://github.com/Prathu241/Chittoor_website-content.git",
-      "github": "https://github.com/Prathu241/Chittoor_website-content.git"
+      "github": "https://github.com/Prathu241/Chittoor_website-content.git",
+      "link": "https://github.com/Prathu241/Chittoor_website-content.git"
     },
     {
       "title": "AI Comment Analyzer",
@@ -138,8 +158,8 @@
         "NLP",
         "Python"
       ],
-      "link": "https://github.com/Mypersonal-Use/Comment_analyzer_AI.git",
-      "github": "https://github.com/Mypersonal-Use/Comment_analyzer_AI.git"
+      "github": "https://github.com/Mypersonal-Use/Comment_analyzer_AI.git",
+      "link": "https://commentanalyzerai-sample.streamlit.app/#e-consultation-ai"
     },
     {
       "title": "RWD Bank",
@@ -149,8 +169,8 @@
         "CSS",
         "JS"
       ],
-      "link": "https://github.com/Prathu241/RWD-BANK.git",
-      "github": "https://github.com/Prathu241/RWD-BANK.git"
+      "github": "https://github.com/Prathu241/RWD-BANK.git",
+      "link": "https://prathu241.github.io/RWD-BANK/"
     },
     {
       "title": "AI Disease Detection",
@@ -160,8 +180,8 @@
         "Python",
         "OpenCV"
       ],
-      "link": "https://github.com/Prathu241/open_agri.git",
-      "github": "https://github.com/Prathu241/open_agri.git"
+      "github": "https://github.com/Prathu241/open_agri.git",
+      "link": "https://github.com/Prathu241/open_agri.git"
     }
   ],
   "education": [

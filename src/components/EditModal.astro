@@ -2,27 +2,45 @@
 const { initialData } = Astro.props;
 ---
 
-<div id="visual-editor-modal" class="fixed inset-0 z-[100] hidden">
+<div id="visual-editor-modal" class="fixed inset-0 z-[100] hidden text-slate-100">
     <!-- Backdrop -->
-    <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" id="modal-backdrop"></div>
+    <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" id="modal-backdrop"></div>
     
     <!-- Modal Content -->
-    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-[#0f111a] border border-white/10 shadow-2xl animate-in fade-in zoom-in duration-200">
-        <div class="flex justify-between items-center p-4 border-b border-white/5 bg-black/20">
-            <h3 class="text-white font-mono uppercase tracking-widest text-sm" id="modal-title">Edit Content</h3>
-            <button id="modal-close" class="text-gray-400 hover:text-white">&times;</button>
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-slate-950 border border-white/10 shadow-2xl animate-in fade-in zoom-in duration-200">
+        <div class="flex justify-between items-center p-4 border-b border-white/5 bg-white/5">
+            <h3 class="text-slate-100 font-mono uppercase tracking-widest text-sm" id="modal-title">Edit Content</h3>
+            <button id="modal-close" class="text-slate-400 hover:text-slate-100">&times;</button>
         </div>
         
         <div class="p-6 max-h-[70vh] overflow-y-auto custom-scrollbar" id="modal-form-container">
             <!-- Dynamic Form Fields will be injected here -->
         </div>
         
-        <div class="p-4 border-t border-white/5 bg-black/20 flex justify-end gap-3">
-             <button id="modal-cancel" class="px-4 py-2 border border-white/10 text-xs font-mono text-gray-400 hover:text-white hover:border-white transition-colors uppercase">Cancel</button>
-             <button id="modal-save" class="px-6 py-2 bg-primary text-black font-bold text-xs font-mono uppercase hover:bg-white transition-colors">Save Changes</button>
+        <div class="p-4 border-t border-white/5 bg-white/5 flex justify-end gap-3">
+             <button id="modal-cancel" class="px-4 py-2 border border-white/10 text-xs font-mono text-slate-300 hover:text-slate-100 hover:border-white/30 transition-colors uppercase">Cancel</button>
+             <button id="modal-save" class="px-6 py-2 bg-primary text-slate-950 font-bold text-xs font-mono uppercase hover:bg-white transition-colors">Save Changes</button>
         </div>
     </div>
 </div>
+
+<style>
+    #visual-editor-modal input,
+    #visual-editor-modal textarea {
+        color: #e2e8f0;
+        background-color: rgba(8, 12, 20, 0.96);
+    }
+
+    #visual-editor-modal input::placeholder,
+    #visual-editor-modal textarea::placeholder {
+        color: rgba(148, 163, 184, 0.75);
+    }
+
+    #visual-editor-modal input:focus,
+    #visual-editor-modal textarea:focus {
+        color: #f8fafc;
+    }
+</style>
 
 <script define:vars={{ initialData }}>
     // Store full content in window for easy access
@@ -44,35 +62,250 @@ const { initialData } = Astro.props;
         formContainer.innerHTML = ''; // Clear previous fields
         
         // Generate Form Fields
-        generateFields(data, sectionKey); // Pass top level
+        if (sectionKey === 'projects') {
+            createProjectsEditor(data);
+        } else if (sectionKey === 'skills') {
+            createSkillsEditor(data);
+        } else if (sectionKey === 'experience') {
+            createExperienceEditor(data);
+        } else {
+            generateFields(data, sectionKey);
+        }
         
         modal.classList.remove('hidden');
     };
 
+    function createProjectsEditor(projects) {
+        const container = document.createElement('div');
+        container.className = 'space-y-6';
+
+        projects.forEach((project, idx) => {
+            const card = document.createElement('div');
+            card.className = 'p-4 border border-white/10 bg-black/30 rounded-lg space-y-3';
+            card.innerHTML = `
+                <div class="flex justify-between items-center mb-2">
+                    <h4 class="text-sm font-mono text-primary">Project ${idx + 1}</h4>
+                    <button type="button" class="text-red-400 hover:text-red-300 text-xs px-2 py-1 border border-red-400/30 rounded" data-remove="${idx}">Remove</button>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 font-mono mb-1">Title</label>
+                    <input type="text" value="${project.title}" class="w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none" data-field="title" data-index="${idx}">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 font-mono mb-1">Description</label>
+                    <textarea rows="2" class="w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none" data-field="desc" data-index="${idx}">${project.desc}</textarea>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 font-mono mb-1">Tech (comma-separated)</label>
+                    <input type="text" value="${project.tech.join(', ')}" class="w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none" data-field="tech" data-index="${idx}">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 font-mono mb-1">GitHub Link</label>
+                    <input type="text" value="${project.github}" class="w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none" data-field="github" data-index="${idx}">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 font-mono mb-1">Website Link</label>
+                    <input type="text" value="${project.link}" class="w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none" data-field="link" data-index="${idx}">
+                </div>
+            `;
+            container.appendChild(card);
+        });
+
+        // Add New Project Button
+        const addBtn = document.createElement('button');
+        addBtn.type = 'button';
+        addBtn.className = 'w-full px-4 py-2 mt-4 bg-primary/20 border border-primary text-primary text-xs font-mono hover:bg-primary/30 transition-colors rounded';
+        addBtn.innerText = '+ Add New Project';
+        addBtn.onclick = addNewProject;
+        container.appendChild(addBtn);
+
+        formContainer.appendChild(container);
+
+        // Remove button handlers
+        formContainer.addEventListener('click', (e) => {
+            if (e.target.dataset.remove !== undefined) {
+                e.preventDefault();
+                const idx = parseInt(e.target.dataset.remove);
+                e.target.closest('[data-index]')?.parentElement?.remove() || e.target.closest('.p-4').remove();
+            }
+        });
+    }
+
+    function addNewProject() {
+        const newProject = {
+            title: "New Project",
+            desc: "Project description",
+            tech: ["Tech"],
+            github: "https://github.com/",
+            link: "https://github.com/"
+        };
+
+        const idx = formContainer.querySelectorAll('[data-field="title"]').length;
+        const card = document.createElement('div');
+        card.className = 'p-4 border border-white/10 bg-black/30 rounded-lg space-y-3';
+        card.innerHTML = `
+            <div class="flex justify-between items-center mb-2">
+                <h4 class="text-sm font-mono text-primary">Project ${idx + 1}</h4>
+                <button type="button" class="text-red-400 hover:text-red-300 text-xs px-2 py-1 border border-red-400/30 rounded" data-remove="${idx}">Remove</button>
+            </div>
+            <div>
+                <label class="block text-xs text-gray-500 font-mono mb-1">Title</label>
+                <input type="text" value="New Project" class="w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none" data-field="title" data-index="${idx}">
+            </div>
+            <div>
+                <label class="block text-xs text-gray-500 font-mono mb-1">Description</label>
+                <textarea rows="2" class="w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none" data-field="desc" data-index="${idx}">Project description</textarea>
+            </div>
+            <div>
+                <label class="block text-xs text-gray-500 font-mono mb-1">Tech (comma-separated)</label>
+                <input type="text" value="Tech" class="w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none" data-field="tech" data-index="${idx}">
+            </div>
+            <div>
+                <label class="block text-xs text-gray-500 font-mono mb-1">GitHub Link</label>
+                <input type="text" value="https://github.com/" class="w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none" data-field="github" data-index="${idx}">
+            </div>
+            <div>
+                <label class="block text-xs text-gray-500 font-mono mb-1">Website Link</label>
+                <input type="text" value="https://github.com/" class="w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none" data-field="link" data-index="${idx}">
+            </div>
+        `;
+        formContainer.querySelector('button[type="button"]')?.insertAdjacentElement('beforebegin', card);
+    }
+
+    function createSkillsEditor(skills) {
+        const container = document.createElement('div');
+        container.className = 'space-y-4';
+
+        skills.forEach((skill, idx) => {
+            const card = document.createElement('div');
+            card.className = 'p-3 border border-white/10 bg-black/30 rounded-lg flex gap-3 items-end';
+            card.innerHTML = `
+                <div class="flex-1">
+                    <label class="block text-xs text-gray-500 font-mono mb-1">Skill Name</label>
+                    <input type="text" value="${skill.name}" class="w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none" data-field="name" data-index="${idx}">
+                </div>
+                <button type="button" class="text-red-400 hover:text-red-300 text-xs px-2 py-1 border border-red-400/30 rounded" data-remove="${idx}">Remove</button>
+            `;
+            container.appendChild(card);
+        });
+
+        const addBtn = document.createElement('button');
+        addBtn.type = 'button';
+        addBtn.className = 'w-full px-4 py-2 mt-4 bg-primary/20 border border-primary text-primary text-xs font-mono hover:bg-primary/30 transition-colors rounded';
+        addBtn.innerText = '+ Add New Skill';
+        addBtn.onclick = () => {
+            const idx = container.querySelectorAll('[data-field="name"]').length;
+            const card = document.createElement('div');
+            card.className = 'p-3 border border-white/10 bg-black/30 rounded-lg flex gap-3 items-end';
+            card.innerHTML = `
+                <div class="flex-1">
+                    <label class="block text-xs text-gray-500 font-mono mb-1">Skill Name</label>
+                    <input type="text" value="New Skill" class="w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none" data-field="name" data-index="${idx}">
+                </div>
+                <button type="button" class="text-red-400 hover:text-red-300 text-xs px-2 py-1 border border-red-400/30 rounded" data-remove="${idx}">Remove</button>
+            `;
+            addBtn.insertAdjacentElement('beforebegin', card);
+        };
+        container.appendChild(addBtn);
+        formContainer.appendChild(container);
+
+        formContainer.addEventListener('click', (e) => {
+            if (e.target.dataset.remove !== undefined) {
+                e.preventDefault();
+                e.target.closest('.p-3')?.remove();
+            }
+        });
+    }
+
+    function createExperienceEditor(experiences) {
+        const container = document.createElement('div');
+        container.className = 'space-y-6';
+
+        experiences.forEach((exp, idx) => {
+            const card = document.createElement('div');
+            card.className = 'p-4 border border-white/10 bg-black/30 rounded-lg space-y-3';
+            card.innerHTML = `
+                <div class="flex justify-between items-center mb-2">
+                    <h4 class="text-sm font-mono text-primary">Experience ${idx + 1}</h4>
+                    <button type="button" class="text-red-400 hover:text-red-300 text-xs px-2 py-1 border border-red-400/30 rounded" data-remove="${idx}">Remove</button>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 font-mono mb-1">Role</label>
+                    <input type="text" value="${exp.role}" class="w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none" data-field="role" data-index="${idx}">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 font-mono mb-1">Company</label>
+                    <input type="text" value="${exp.company}" class="w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none" data-field="company" data-index="${idx}">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 font-mono mb-1">Date</label>
+                    <input type="text" value="${exp.date}" class="w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none" data-field="date" data-index="${idx}">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 font-mono mb-1">Description</label>
+                    <textarea rows="2" class="w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none" data-field="desc" data-index="${idx}">${exp.desc}</textarea>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+
+        const addBtn = document.createElement('button');
+        addBtn.type = 'button';
+        addBtn.className = 'w-full px-4 py-2 mt-4 bg-primary/20 border border-primary text-primary text-xs font-mono hover:bg-primary/30 transition-colors rounded';
+        addBtn.innerText = '+ Add New Experience';
+        addBtn.onclick = () => {
+            const idx = container.querySelectorAll('[data-field="role"]').length;
+            const card = document.createElement('div');
+            card.className = 'p-4 border border-white/10 bg-black/30 rounded-lg space-y-3';
+            card.innerHTML = `
+                <div class="flex justify-between items-center mb-2">
+                    <h4 class="text-sm font-mono text-primary">Experience ${idx + 1}</h4>
+                    <button type="button" class="text-red-400 hover:text-red-300 text-xs px-2 py-1 border border-red-400/30 rounded" data-remove="${idx}">Remove</button>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 font-mono mb-1">Role</label>
+                    <input type="text" value="New Role" class="w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none" data-field="role" data-index="${idx}">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 font-mono mb-1">Company</label>
+                    <input type="text" value="Company Name" class="w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none" data-field="company" data-index="${idx}">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 font-mono mb-1">Date</label>
+                    <input type="text" value="Date" class="w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none" data-field="date" data-index="${idx}">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 font-mono mb-1">Description</label>
+                    <textarea rows="2" class="w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none" data-field="desc" data-index="${idx}">Description</textarea>
+                </div>
+            `;
+            addBtn.insertAdjacentElement('beforebegin', card);
+        };
+        container.appendChild(addBtn);
+        formContainer.appendChild(container);
+
+        formContainer.addEventListener('click', (e) => {
+            if (e.target.dataset.remove !== undefined) {
+                e.preventDefault();
+                e.target.closest('.p-4')?.remove();
+            }
+        });
+    }
+
     function generateFields(data, context, parentKey = '') {
         if (typeof data === 'string' || typeof data === 'number') {
             createInputField(context, data, parentKey);
-        } else if (Array.isArray(data)) {
-            // Handle Arrays (Projects, Experience, Skills)
-            // For now, simpler approach: JSON Text Area for arrays or complex objects
-            // Or simple list of items
-            createJsonEditor(parentKey || context, data);
         } else if (typeof data === 'object' && data !== null) {
-            // Recursive for objects
             Object.keys(data).forEach(key => {
                  const newKey = parentKey ? `${parentKey}.${key}` : key;
                  if (typeof data[key] === 'string' || typeof data[key] === 'number') {
-                     createInputField(key, data[key], context); // context used as root usually
-                 } else {
-                     // Arrays or nested objects inside
-                     createJsonEditor(key, data[key], context);
+                     createInputField(key, data[key], context);
                  }
             });
         }
     }
 
     function createInputField(label, value, section) {
-        // Only for Profile mostly
         const wrapper = document.createElement('div');
         wrapper.className = 'mb-4';
         
@@ -81,7 +314,7 @@ const { initialData } = Astro.props;
         labelEl.innerText = label;
         
         let input;
-        if (value.length > 60) {
+        if (value && value.length > 60) {
             input = document.createElement('textarea');
             input.rows = 4;
             input.className = "w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none";
@@ -90,37 +323,12 @@ const { initialData } = Astro.props;
              input.type = 'text';
              input.className = "w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none";
         }
-        input.value = value;
-        input.dataset.key = label; // Simplified key tracking
+        input.value = value || '';
+        input.dataset.key = label;
         input.dataset.section = section;
         
         wrapper.appendChild(labelEl);
         wrapper.appendChild(input);
-        formContainer.appendChild(wrapper);
-    }
-
-    function createJsonEditor(label, value, section) {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'mb-6 p-4 border border-white/5 bg-black/20';
-        
-        const labelEl = document.createElement('label');
-        labelEl.className = 'block text-xs font-mono text-primary uppercase mb-2';
-        labelEl.innerText = `${label} (Advanced Editor)`;
-        
-        const textarea = document.createElement('textarea');
-        textarea.className = 'w-full h-40 bg-black text-gray-300 font-mono text-xs p-2 border border-white/10 focus:border-primary focus:outline-none';
-        textarea.value = JSON.stringify(value, null, 2);
-        textarea.dataset.isJson = 'true';
-        textarea.dataset.key = label;
-        textarea.dataset.section = section;
-        
-        const help = document.createElement('p');
-        help.className = 'text-[10px] text-gray-600 mt-1 font-mono';
-        help.innerText = 'Edit the JSON array directly. Be careful with syntax.';
-        
-        wrapper.appendChild(labelEl);
-        wrapper.appendChild(textarea);
-        wrapper.appendChild(help);
         formContainer.appendChild(wrapper);
     }
 
@@ -136,51 +344,63 @@ const { initialData } = Astro.props;
         btn.innerText = 'Saving...';
         
         try {
-            // Reconstruct data
-            const inputs = formContainer.querySelectorAll('input, textarea');
-            const updatedData = { ...window.siteContent }; // Start with current state
-            
-            // This is a naive reconstruction, better to merge specific section
-            // Because we pass 'sectionKey' (e.g., 'profile'), we primarily update that
-            
-            const sectionUpdate = { ...window.siteContent[currentSection] };
-            
-            inputs.forEach(input => {
-                const key = input.dataset.key;
-                let val = input.value;
-                
-                if (input.dataset.isJson === 'true') {
-                    try {
-                        val = JSON.parse(val);
-                        // If it's the whole array (e.g. skills), we replace the whole section property
-                        if (currentSection === key || (Array.isArray(window.siteContent[currentSection]) && key === currentSection)) {
-                            // It's the root array of this section
-                             // Wait, logic check: if I send 'skills', I get one JSON editor for 'skills'.
-                             // The key is 'skills'. currentSection is 'skills'.
-                             updatedData[currentSection] = val;
-                             return;
-                        } else {
-                            // It's a property inside an object (e.g. details in experience?)
-                            sectionUpdate[key] = val;
-                        }
-                    } catch (e) {
-                        alert(`Invalid JSON in ${key}`);
-                        throw e;
-                    }
-                } else {
-                   // Simple key update on object
-                   if (typeof sectionUpdate === 'object' && !Array.isArray(sectionUpdate)) {
-                       sectionUpdate[key] = val;
-                   }
-                }
-            });
+            const updatedData = JSON.parse(JSON.stringify(window.siteContent));
 
-            // If it wasn't a direct array replacement, assign the updated object back
-            if (!Array.isArray(updatedData[currentSection])) {
+            if (currentSection === 'projects') {
+                const projects = [];
+                formContainer.querySelectorAll('[data-field="title"]').forEach((titleField, idx) => {
+                    const titleEls = formContainer.querySelectorAll(`[data-field="title"]`);
+                    const descEls = formContainer.querySelectorAll(`[data-field="desc"]`);
+                    const techEls = formContainer.querySelectorAll(`[data-field="tech"]`);
+                    const githubEls = formContainer.querySelectorAll(`[data-field="github"]`);
+                    const linkEls = formContainer.querySelectorAll(`[data-field="link"]`);
+
+                    if (titleEls[idx]) {
+                        projects.push({
+                            title: titleEls[idx].value,
+                            desc: descEls[idx]?.value || '',
+                            tech: techEls[idx]?.value.split(',').map(t => t.trim()).filter(t => t) || [],
+                            github: githubEls[idx]?.value || '',
+                            link: linkEls[idx]?.value || ''
+                        });
+                    }
+                });
+                updatedData.projects = projects;
+            } else if (currentSection === 'skills') {
+                const skills = [];
+                formContainer.querySelectorAll('[data-field="name"]').forEach((nameField) => {
+                    skills.push({ name: nameField.value, icon: 'https://skillicons.dev/icons?i=default' });
+                });
+                updatedData.skills = skills;
+            } else if (currentSection === 'experience') {
+                const experiences = [];
+                formContainer.querySelectorAll('[data-field="role"]').forEach((roleField, idx) => {
+                    const roleEls = formContainer.querySelectorAll(`[data-field="role"]`);
+                    const companyEls = formContainer.querySelectorAll(`[data-field="company"]`);
+                    const dateEls = formContainer.querySelectorAll(`[data-field="date"]`);
+                    const descEls = formContainer.querySelectorAll(`[data-field="desc"]`);
+
+                    if (roleEls[idx]) {
+                        experiences.push({
+                            role: roleEls[idx].value,
+                            company: companyEls[idx]?.value || '',
+                            date: dateEls[idx]?.value || '',
+                            desc: descEls[idx]?.value || '',
+                            details: []
+                        });
+                    }
+                });
+                updatedData.experience = experiences;
+            } else {
+                const inputs = formContainer.querySelectorAll('input, textarea');
+                const sectionUpdate = { ...window.siteContent[currentSection] };
+                inputs.forEach(input => {
+                    const key = input.dataset.key;
+                    sectionUpdate[key] = input.value;
+                });
                 updatedData[currentSection] = sectionUpdate;
             }
 
-            // Send to API
             const response = await fetch('/api/content/update', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -190,10 +410,12 @@ const { initialData } = Astro.props;
             if (response.ok) {
                 window.location.reload();
             } else {
-                alert('Failed to save');
+                const error = await response.text();
+                alert('Failed to save: ' + error);
             }
         } catch (err) {
             console.error(err);
+            alert('Error: ' + err.message);
         } finally {
             btn.innerText = 'SAVE CHANGES';
         }
