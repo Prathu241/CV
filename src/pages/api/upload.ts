@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { AUTH_CONFIGURED, isAuthenticated, isTrustedOrigin } from '../../lib/auth';
+import { CAN_WRITE_RUNTIME_CONTENT } from '../../lib/content';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -42,6 +43,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   if (!isAuthenticated(cookies)) {
             return json({ error: 'Unauthorized' }, 401);
   }
+
+    if (!CAN_WRITE_RUNTIME_CONTENT) {
+            return json({ error: 'Live uploads are disabled in deployed mode.' }, 501);
+    }
 
   try {
       const formData = await request.formData();

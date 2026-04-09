@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { AUTH_CONFIGURED, isAuthenticated, isTrustedOrigin } from '../../../lib/auth';
-import { updateContent } from '../../../lib/content';
+import { CAN_WRITE_RUNTIME_CONTENT, updateContent } from '../../../lib/content';
 
 const MAX_CONTENT_BYTES = 1024 * 1024;
 
@@ -47,6 +47,12 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
   if (!isAuthenticated(cookies)) {
             return json({ error: 'Unauthorized' }, 401);
+  }
+
+  if (!CAN_WRITE_RUNTIME_CONTENT) {
+        return json({
+            error: 'Live editor writes are disabled in deployed mode. Update content via Git and redeploy.'
+        }, 501);
   }
 
   try {

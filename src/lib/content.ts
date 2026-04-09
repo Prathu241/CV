@@ -4,6 +4,8 @@ import dataFromFile from '../data/site-content.json';
 
 const CONTENT_FILE = path.join(process.cwd(), 'src', 'data', 'site-content.json');
 
+export const CAN_WRITE_RUNTIME_CONTENT = !import.meta.env.PROD;
+
 export function getContent() {
     // IN PRODUCTION (Vercel): Always use the bundled data to avoid file system crashes
     if (import.meta.env.PROD) {
@@ -24,6 +26,10 @@ export function getContent() {
 }
 
 export function updateContent(newData: any) {
+    if (!CAN_WRITE_RUNTIME_CONTENT) {
+        return false;
+    }
+
     try {
         // Ensure directory exists
         const dir = path.dirname(CONTENT_FILE);

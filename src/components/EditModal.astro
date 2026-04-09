@@ -410,8 +410,19 @@ const { initialData } = Astro.props;
             if (response.ok) {
                 window.location.reload();
             } else {
-                const error = await response.text();
-                alert('Failed to save: ' + error);
+                let message = 'Failed to save changes.';
+                try {
+                    const body = await response.json();
+                    if (body?.error) {
+                        message = body.error;
+                    }
+                } catch {
+                    const fallbackText = await response.text();
+                    if (fallbackText) {
+                        message = fallbackText;
+                    }
+                }
+                alert(message);
             }
         } catch (err) {
             console.error(err);
