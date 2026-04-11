@@ -13,13 +13,13 @@ const isLoggedIn = isAuthenticated(Astro.cookies);
 <Layout title="Pratham Sarawad | Portfolio">
   <!-- Navigation -->
   <nav class="fixed w-full z-40 top-0 start-0 border-b border-white/10 bg-[#07101d]/72 backdrop-blur-xl">
-    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between p-4">
+    <div class="max-w-7xl mx-auto flex items-center justify-between p-4">
       <a href="#" class="flex items-center space-x-3 rtl:space-x-reverse group">
         <span class="self-center text-xl font-semibold whitespace-nowrap text-white transition-colors duration-300">
           Pratham Sarawad
         </span>
       </a>
-      <button data-collapse-toggle="navbar-default" type="button" class="inline-flex items-center p-2 w-10 h-10 justify-center text-sm text-slate-300 rounded-lg md:hidden hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-primary/30" aria-controls="navbar-default" aria-expanded="false" id="menu-toggle">
+      <button type="button" class="inline-flex items-center p-2 w-10 h-10 justify-center text-sm text-slate-300 rounded-lg md:hidden hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-primary/30" aria-controls="mobile-sidebar" aria-expanded="false" id="menu-toggle">
           <span class="sr-only">Open main menu</span>
           <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 17 14">
               <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 1h15M1 7h15M1 13h15"/>
@@ -34,39 +34,107 @@ const isLoggedIn = isAuthenticated(Astro.cookies);
         </form>
       )}
 
-      <div class="hidden w-full md:block md:w-auto" id="navbar-default">
-        <ul class="font-medium flex flex-col p-4 md:p-0 mt-4 md:flex-row md:space-x-5 rtl:space-x-reverse md:mt-0 bg-surface md:bg-transparent border border-white/10 md:border-0 rounded-2xl md:rounded-none shadow-xl md:shadow-none">
+      <div class="hidden md:block md:w-auto" id="navbar-default">
+        <ul class="font-medium flex flex-row md:space-x-5 rtl:space-x-reverse">
           {['About', 'Experience', 'Projects', 'Skills'].map((item) => (
             <li>
-              <a href={item === 'Projects' ? '/projects' : item === 'Skills' ? '/skills' : `#${item.toLowerCase()}`} class="magnetic relative block py-2 px-3 text-slate-200 hover:text-primary transition-colors duration-300 group hover:bg-white/5 md:hover:bg-transparent rounded-lg md:rounded-none text-[15px]">
+              <a href={item === 'Projects' ? '/projects' : item === 'Skills' ? '/skills' : `#${item.toLowerCase()}`} class="magnetic relative block py-2 px-3 text-slate-200 hover:text-primary transition-colors duration-300 group rounded-lg text-[15px]">
                 {item}
-                <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full hidden md:block"></span>
+                <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
               </a>
             </li>
           ))}
         </ul>
       </div>
     </div>
-
-    {isLoggedIn && (
-      <form method="POST" action="/api/auth/logout" class="px-4 pb-3 md:hidden">
-        <button type="submit" class="w-full px-3 py-2 text-xs rounded-lg border border-white/15 text-white/80 hover:text-white hover:border-white/30 transition-colors">
-          Exit edit mode
-        </button>
-      </form>
-    )}
-
   </nav>
+
+  <div id="mobile-sidebar-overlay" class="fixed inset-0 z-40 bg-black/55 backdrop-blur-[1px] opacity-0 pointer-events-none transition-opacity duration-300 md:hidden"></div>
+  <aside id="mobile-sidebar" class="fixed top-0 right-0 z-50 h-full w-[84%] max-w-[320px] border-l border-white/10 bg-[#08111f]/96 backdrop-blur-xl shadow-2xl translate-x-full transition-transform duration-300 ease-out md:hidden">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-white/10">
+      <p class="text-sm tracking-[0.18em] uppercase text-slate-200">Navigation</p>
+      <button id="mobile-sidebar-close" type="button" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-white/10 text-slate-300 hover:text-white hover:border-white/25 transition-colors" aria-label="Close menu">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+    <nav class="px-4 py-4">
+      <ul class="space-y-1.5">
+        {['About', 'Experience', 'Projects', 'Skills'].map((item) => (
+          <li>
+            <a href={item === 'Projects' ? '/projects' : item === 'Skills' ? '/skills' : `#${item.toLowerCase()}`} class="mobile-nav-link block rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-[15px] text-slate-200 hover:border-primary/40 hover:text-primary transition-colors">
+              {item}
+            </a>
+          </li>
+        ))}
+      </ul>
+
+      {isLoggedIn && (
+        <form method="POST" action="/api/auth/logout" class="mt-5 pt-5 border-t border-white/10">
+          <button type="submit" class="w-full px-4 py-3 text-sm rounded-xl border border-white/15 text-white/90 hover:text-white hover:border-white/30 transition-colors">
+            Exit edit mode
+          </button>
+        </form>
+      )}
+    </nav>
+  </aside>
 
   <script>
       const menuToggle = document.getElementById('menu-toggle');
       const navbar = document.getElementById('navbar-default');
+      const mobileSidebar = document.getElementById('mobile-sidebar');
+      const mobileOverlay = document.getElementById('mobile-sidebar-overlay');
+      const mobileClose = document.getElementById('mobile-sidebar-close');
+      const mobileLinks = document.querySelectorAll('.mobile-nav-link');
+
+      const openSidebar = () => {
+        if (!mobileSidebar || !mobileOverlay || !menuToggle) return;
+        mobileSidebar.classList.remove('translate-x-full');
+        mobileOverlay.classList.remove('opacity-0', 'pointer-events-none');
+        document.body.classList.add('overflow-hidden');
+        menuToggle.setAttribute('aria-expanded', 'true');
+      };
+
+      const closeSidebar = () => {
+        if (!mobileSidebar || !mobileOverlay || !menuToggle) return;
+        mobileSidebar.classList.add('translate-x-full');
+        mobileOverlay.classList.add('opacity-0', 'pointer-events-none');
+        document.body.classList.remove('overflow-hidden');
+        menuToggle.setAttribute('aria-expanded', 'false');
+      };
       
-      if (menuToggle && navbar) {
-          menuToggle.addEventListener('click', () => {
-              navbar.classList.toggle('hidden');
+      if (menuToggle) {
+        menuToggle.addEventListener('click', () => {
+          if (!mobileSidebar) return;
+          if (mobileSidebar.classList.contains('translate-x-full')) {
+            openSidebar();
+          } else {
+            closeSidebar();
+          }
           });
       }
+
+      mobileClose?.addEventListener('click', closeSidebar);
+      mobileOverlay?.addEventListener('click', closeSidebar);
+
+      mobileLinks.forEach((link) => {
+        link.addEventListener('click', () => {
+          closeSidebar();
+        });
+      });
+
+      window.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          closeSidebar();
+        }
+      });
+
+      window.addEventListener('resize', () => {
+        if (window.innerWidth >= 768) {
+          closeSidebar();
+        }
+      });
 
       const params = new URLSearchParams(window.location.search);
       if (params.get('logged_out') === '1') {
