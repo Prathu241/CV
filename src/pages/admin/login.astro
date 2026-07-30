@@ -63,10 +63,20 @@ const authConfigured = AUTH_CONFIGURED;
             if (res.ok) {
               window.location.href = '/';
             } else {
+                let message = 'ACCESS_DENIED: Login failed';
+                try {
+                  const body = await res.json();
+                  if (body?.error) message = `ACCESS_DENIED: ${body.error}`;
+                } catch {
+                  // Keep the safe generic message for non-JSON responses.
+                }
+                if (errorMsg) errorMsg.textContent = message;
                 errorMsg?.classList.remove('hidden');
             }
         } catch (err) {
             console.error(err);
+            if (errorMsg) errorMsg.textContent = 'ACCESS_DENIED: Network error';
+            errorMsg?.classList.remove('hidden');
         }
     });
   </script>

@@ -1,24 +1,12 @@
 import type { APIRoute } from 'astro';
-import { AUTH_CONFIGURED, destroySession, isAuthenticated, isTrustedOrigin } from '../../../lib/auth';
+import { AUTH_CONFIGURED, destroySession, isTrustedOrigin } from '../../../lib/auth';
 
 export const POST: APIRoute = async ({ request, cookies, redirect }) => {
-  if (!AUTH_CONFIGURED) {
-    return new Response(JSON.stringify({ error: 'Editor access is not configured' }), {
-      status: 503,
-      headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }
-    });
-  }
-
-  if (!isTrustedOrigin(request)) {
+  // Logout is intentionally idempotent: an expired or missing session should
+  // still be cleared and redirected, rather than trapping the user in admin.
+  if (AUTH_CONFIGURED && !isTrustedOrigin(request)) {
     return new Response(JSON.stringify({ error: 'Forbidden origin' }), {
       status: 403,
-      headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }
-    });
-  }
-
-  if (!isAuthenticated(cookies)) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-      status: 401,
       headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }
     });
   }
