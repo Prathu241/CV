@@ -51,7 +51,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
   if (!CAN_WRITE_RUNTIME_CONTENT) {
         return json({
-            error: 'Live editor writes are disabled in deployed mode. Update content via Git and redeploy.'
+            error: 'Live editor writes are not configured for this deployment.'
         }, 501);
   }
 
@@ -76,7 +76,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
                     return json({ error: 'Unsafe payload' }, 400);
       }
 
-      const success = updateContent(data);
+    const success = await updateContent(data);
       
       if (success) {
                     return json({ success: true }, 200);

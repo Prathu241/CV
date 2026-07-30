@@ -1,18 +1,19 @@
 import crypto from 'node:crypto';
 
-const DEV_EDITOR_USER = 'pratham@dev.com';
-const DEV_EDITOR_PASS = 'Prathu@020406';
-const DEV_SESSION_SECRET = 'local-dev-change-this-secret';
+const DEV_EDITOR_USER = '';
+const DEV_EDITOR_PASS = '';
+const DEV_SESSION_SECRET = '';
+const runtimeEnv = process.env;
 
-export const EDITOR_USER = import.meta.env.EDITOR_USER || (import.meta.env.DEV ? DEV_EDITOR_USER : '');
-export const EDITOR_PASS = import.meta.env.EDITOR_PASS || (import.meta.env.DEV ? DEV_EDITOR_PASS : '');
-const HAS_PROD_EDITOR_USER = Boolean(import.meta.env.EDITOR_USER);
-const HAS_PROD_EDITOR_PASS = Boolean(import.meta.env.EDITOR_PASS);
-const HAS_PROD_SESSION_SECRET = Boolean(import.meta.env.SESSION_SECRET);
+export const EDITOR_USER = runtimeEnv.EDITOR_USER || (import.meta.env.DEV ? DEV_EDITOR_USER : '');
+export const EDITOR_PASS = runtimeEnv.EDITOR_PASS || (import.meta.env.DEV ? DEV_EDITOR_PASS : '');
+const HAS_PROD_EDITOR_USER = Boolean(runtimeEnv.EDITOR_USER);
+const HAS_PROD_EDITOR_PASS = Boolean(runtimeEnv.EDITOR_PASS);
+const HAS_PROD_SESSION_SECRET = Boolean(runtimeEnv.SESSION_SECRET);
 export const AUTH_CONFIGURED = import.meta.env.DEV || (HAS_PROD_EDITOR_USER && HAS_PROD_EDITOR_PASS && HAS_PROD_SESSION_SECRET);
 
-const SESSION_SECRET = import.meta.env.SESSION_SECRET || (import.meta.env.DEV ? DEV_SESSION_SECRET : crypto.randomBytes(32).toString('hex'));
-const SESSION_TTL_SECONDS = Number(import.meta.env.SESSION_TTL_SECONDS || 60 * 60 * 8); // 8 hours
+const SESSION_SECRET = runtimeEnv.SESSION_SECRET || (import.meta.env.DEV ? DEV_SESSION_SECRET : crypto.randomBytes(32).toString('hex'));
+const SESSION_TTL_SECONDS = Number(runtimeEnv.SESSION_TTL_SECONDS || 60 * 60 * 8); // 8 hours
 
 export const COOKIE_NAME = 'site_admin_session';
 
@@ -96,7 +97,7 @@ export function createSession(cookies: any): void {
     cookies.set(COOKIE_NAME, token, {
         path: '/',
         httpOnly: true,
-        secure: import.meta.env.PROD,
+        secure: !import.meta.env.DEV,
         sameSite: 'strict',
         maxAge: SESSION_TTL_SECONDS
     });

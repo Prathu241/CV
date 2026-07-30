@@ -1,6 +1,6 @@
 import { getContent } from '../lib/content';
 
-const data = getContent();
+const data = await getContent();
 
 export const profile = data.profile;
 export const skills = data.skills;

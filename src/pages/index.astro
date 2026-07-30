@@ -5,7 +5,7 @@ import { getContent } from '../lib/content';
 import { isAuthenticated } from '../lib/auth';
 import EditModal from '../components/EditModal.astro';
 
-const data = getContent();
+const data = await getContent();
 const { skills, experience, projects, education, socialLinks, profile } = data;
 const isLoggedIn = isAuthenticated(Astro.cookies);
 ---

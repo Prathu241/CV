@@ -7,7 +7,7 @@
     "email": "prathamspr@gmail.com",
     "image": "/profile-new.png?v=3",
     "focus": "AI/ML",
-    "status": "Intern @ Atria Founders Office",
+    "status": "Open to work",
     "location": "Bangalore, IN",
     "role_detail": "Founder, Student Club"
   },
@@ -67,44 +67,28 @@
       "company": "CODE RED (BMSIT)",
       "date": "2024-DEC",
       "desc": "Selected among the Top 50 teams nationwide for developing a gamified carbon-reduction application.",
-      "details": [
-        "Built a gamified carbon-reduction app analyzing user emissions.",
-        "Contributed to end-to-end product design and technical development.",
-        "Presented the final solution to industry experts."
-      ]
+      "details": []
     },
     {
       "role": "First Place Winner",
       "company": "IDT Project Expo (Jeevanadhara)",
       "date": "2025-Nov",
       "desc": "Awarded 1st place among 15 competing sections.",
-      "details": [
-        "Engineered a comprehensive rural development hardware model.",
-        "Aligned project with UN Sustainable Development Goals.",
-        "Recognized for innovative design and real-world relevance."
-      ]
+      "details": []
     },
     {
       "role": "President",
       "company": "OSCODE Atria Chapter",
       "date": "Sept 2025 – Present",
       "desc": "Leading the chapter covering strategic planning and execution.",
-      "details": [
-        "Leading strategic planning and event execution.",
-        "Driving community engagement initiatives across campus.",
-        "Managing teams to deliver impactful technical workshops."
-      ]
+      "details": []
     },
     {
       "role": "Intern at Atria Founder's Office",
       "company": "Under Chairman, Atria Group",
-      "date": "NOV 2025 – PRESENT",
+      "date": "NOV 2025 – JUNE 2026",
       "desc": "Serving as Project Lead for Project Chittoor.",
-      "details": [
-        "Working directly under the Chairman on rural transformation.",
-        "Coordinating teams and managing operations.",
-        "Driving sustainable development programs."
-      ]
+      "details": []
     }
   ],
   "projects": [

@@ -1,4 +1,10 @@
-EDITOR_USER=pratham@dev.com
-EDITOR_PASS=Prathu@020406
-SESSION_SECRET=replace-with-a-long-random-secret-at-least-32-chars
+EDITOR_USER=your-admin-email@example.com
+EDITOR_PASS=Use-A-Strong-Password-Here-123!
+SESSION_SECRET=3f9d6a1c2e7b4f8a9d5c1e3f7a2b6d8c4e9f1a5c7b3d6e8f2a4c9b1d5e7f3a6
 SESSION_TTL_SECONDS=28800
+CONTENT_REPO_OWNER=your-github-username-or-org
+CONTENT_REPO_NAME=your-repo-name
+CONTENT_REPO_BRANCH=main
+CONTENT_REPO_PATH=src/data/site-content.json
+CONTENT_REPO_UPLOAD_PATH=public/uploads
+GITHUB_TOKEN=your-github-personal-access-token

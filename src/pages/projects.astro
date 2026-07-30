@@ -3,7 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import Section from '../components/Section.astro';
 import { getContent } from '../lib/content';
 
-const { projects } = getContent();
+const { projects } = await getContent();
 ---
 
 <Layout title="Projects | Pratham Sarawad">
