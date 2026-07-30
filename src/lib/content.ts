@@ -5,21 +5,33 @@ import dataFromFile from '../data/site-content.json';
 const CONTENT_FILE = path.join(process.cwd(), 'src', 'data', 'site-content.json');
 const GITHUB_API_BASE = 'https://api.github.com';
 const runtimeEnv = process.env;
+const DEFAULT_CONTENT_REPO_OWNER = 'Prathu241';
+const DEFAULT_CONTENT_REPO_NAME = 'CV';
 
 function getContentRepoOwner(): string {
-    return runtimeEnv.CONTENT_REPO_OWNER || '';
+    const configured = runtimeEnv.CONTENT_REPO_OWNER || '';
+    return configured && configured !== 'your-github-username-or-org'
+        ? configured
+        : DEFAULT_CONTENT_REPO_OWNER;
 }
 
 function getContentRepoName(): string {
-    return runtimeEnv.CONTENT_REPO_NAME || '';
+    const configured = runtimeEnv.CONTENT_REPO_NAME || '';
+    return configured && configured !== 'your-repo-name'
+        ? configured
+        : DEFAULT_CONTENT_REPO_NAME;
 }
 
 function getContentRepoBranch(): string {
-    return runtimeEnv.CONTENT_REPO_BRANCH || 'main';
+    const configured = runtimeEnv.CONTENT_REPO_BRANCH || '';
+    return configured && configured !== 'main-branch' ? configured : 'main';
 }
 
 function getContentRepoPath(): string {
-    return runtimeEnv.CONTENT_REPO_PATH || 'src/data/site-content.json';
+    const configured = runtimeEnv.CONTENT_REPO_PATH || '';
+    return configured && configured !== 'path/to/site-content.json'
+        ? configured
+        : 'src/data/site-content.json';
 }
 
 function getGithubToken(): string {
