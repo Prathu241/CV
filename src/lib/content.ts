@@ -116,7 +116,7 @@ async function writeGithubContent(newData: unknown): Promise<boolean> {
     if (!response.ok) {
         const text = await response.text();
         console.error('GitHub content write failed:', response.status, text);
-        return false;
+        throw new Error(text || `GitHub content write failed with status ${response.status}`);
     }
 
     return true;
@@ -156,7 +156,12 @@ export async function getContent() {
 
 export async function updateContent(newData: any) {
     if (hasGithubContentConfig()) {
-        return writeGithubContent(newData);
+        try {
+            return await writeGithubContent(newData);
+        } catch (error) {
+            console.error('GitHub content update error:', error);
+            throw error;
+        }
     }
 
     try {

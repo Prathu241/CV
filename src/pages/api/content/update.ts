@@ -76,13 +76,14 @@ export const POST: APIRoute = async ({ request, cookies }) => {
                     return json({ error: 'Unsafe payload' }, 400);
       }
 
-    const success = await updateContent(data);
+        const success = await updateContent(data);
       
       if (success) {
                     return json({ success: true }, 200);
       }
             return json({ error: 'Write failed' }, 500);
   } catch (e) {
-            return json({ error: 'Invalid data' }, 400);
+                        const message = e instanceof Error ? e.message : 'Invalid data';
+                        return json({ error: message }, 500);
   }
 }
