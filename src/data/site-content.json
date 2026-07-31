@@ -1,15 +1,15 @@
 {
   "profile": {
     "name": "Pratham Sarawad",
-    "role": "Software Developer | Open Source Contributor",
-    "bio": "I design and build scalable applications, intelligent systems, and real-world tech solutions.\nFocused on clean architecture, performance, and impact-driven development, leading teams to success.",
+    "role": "AI/ML Developer | Technical Leader | Open Source Contributor",
+    "bio": "Computer Science Engineering student with hands-on experience in AI, software engineering, and technical leadership. Passionate about building AI-powered products that solve real-world problems by combining engineering excellence with user-centric product thinking.",
     "about": "I’m a DEVELOPER who enjoys building systems that solve real-world problems — from smart agriculture to open-source communities. I actively work with AI, backend systems, and emerging tech, and I love turning ideas into working products.",
     "email": "prathamspr@gmail.com",
     "image": "/profile-new.png?v=3",
     "focus": "AI/ML",
     "status": "Open to work",
     "location": "Bangalore, IN",
-    "role_detail": "Founder, Student Club"
+    "role_detail": "Lead – OSCode Atria Chapter"
   },
   "skills": [
     {
@@ -59,6 +59,42 @@
     {
       "name": "Linux",
       "icon": "https://skillicons.dev/icons?i=linux"
+    },
+    {
+      "name": "Java",
+      "icon": "https://skillicons.dev/icons?i=java"
+    },
+    {
+      "name": "PostgreSQL",
+      "icon": "https://skillicons.dev/icons?i=postgres"
+    },
+    {
+      "name": "MySQL",
+      "icon": "https://skillicons.dev/icons?i=mysql"
+    },
+    {
+      "name": "MongoDB",
+      "icon": "https://skillicons.dev/icons?i=mongodb"
+    },
+    {
+      "name": "Next.js",
+      "icon": "https://skillicons.dev/icons?i=nextjs"
+    },
+    {
+      "name": "Vercel",
+      "icon": "https://skillicons.dev/icons?i=vercel"
+    },
+    {
+      "name": "Generative AI",
+      "icon": "https://skillicons.dev/icons?i=pytorch"
+    },
+    {
+      "name": "Product Analytics",
+      "icon": "https://skillicons.dev/icons?i=grafana"
+    },
+    {
+      "name": "Natural Language Processing",
+      "icon": "https://skillicons.dev/icons?i=python"
     }
   ],
   "experience": [
@@ -67,28 +103,52 @@
       "company": "CODE RED (BMSIT)",
       "date": "2024-DEC",
       "desc": "Selected among the Top 50 teams nationwide for developing a gamified carbon-reduction application.",
-      "details": []
+      "details": [
+        "Selected among the Top 50 teams nationwide for developing a gamified carbon-reduction application that analyzes user emissions and promotes sustainable behavior.",
+        "Contributed to end-to-end product design, technical development, and final presentation of the solution."
+      ]
     },
     {
       "role": "First Place Winner",
       "company": "IDT Project Expo (Jeevanadhara)",
       "date": "2025-Nov",
       "desc": "Awarded 1st place among 15 competing sections.",
-      "details": []
+      "details": [
+        "Awarded 1st place among 15 competing sections for an engineering project.",
+        "Recognized for sustainable development goals, practical implementation, and strong real-world relevance."
+      ]
     },
     {
       "role": "President",
       "company": "OSCODE Atria Chapter",
-      "date": "Sept 2025 – Present",
+      "date": "Sept 2025 - Present",
       "desc": "Leading the chapter covering strategic planning and execution.",
-      "details": []
+      "details": [
+        "Lead the OSCode Atria Chapter, organizing technical workshops, hackathons, and community initiatives for 200+ students.",
+        "Mentor students in Git, GitHub, and open-source development while fostering collaborative learning.",
+        "Collaborate with industry professionals and student communities to expand technical opportunities."
+      ]
     },
     {
       "role": "Intern at Atria Founder's Office",
       "company": "Under Chairman, Atria Group",
-      "date": "NOV 2025 – JUNE 2026",
+      "date": "Nov 2025 - June 2026",
       "desc": "Serving as Project Lead for Project Chittoor.",
-      "details": []
+      "details": [
+        "Served as Project Lead for Project Chittoor, working under the Chairman of Atria Group on rural transformation initiatives.",
+        "Coordinated 20+ member multidisciplinary teams and contributed technology-driven solutions for agriculture and education.",
+        "Prepared project documentation, stakeholder presentations, and tracked project milestones."
+      ]
+    },
+    {
+      "role": "Guest Speaker",
+      "company": "Garden City University",
+      "date": "June 2026",
+      "desc": "Delivered AI and Generative AI workshops for third- and fourth-year engineering students.",
+      "details": [
+        "Delivered AI and GenAI workshops to 3rd and 4th year engineering students, demonstrating practical AI workflows.",
+        "Demonstrated AI application development through practical examples and interactive discussions."
+      ]
     }
   ],
   "projects": [
