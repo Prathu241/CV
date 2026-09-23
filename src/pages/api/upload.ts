@@ -94,69 +94,89 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
       if (hasGithubContentConfig()) {
           const CONTENT_REPO_OWNER = getContentRepoOwner();
-          const CONTENT_REPO_NAME = getContentRepoName();
+          const configuredRepo = getContentRepoName();
           const CONTENT_REPO_BRANCH = getContentRepoBranch();
           const GITHUB_TOKEN = getGithubToken();
           const GITHUB_USER_AGENT = 'Pratham-Portfolio-CMS/1.0 (+https://prathudev.in)';
 
-          const existingFileResponse = await fetch(
-              `${GITHUB_API_BASE}/repos/${CONTENT_REPO_OWNER}/${CONTENT_REPO_NAME}/contents/${uploadPath}?ref=${encodeURIComponent(CONTENT_REPO_BRANCH)}`,
-              {
-                  cache: 'no-store',
-                  headers: {
-                      Authorization: `Bearer ${GITHUB_TOKEN}`,
-                      Accept: 'application/vnd.github+json',
-                      'User-Agent': GITHUB_USER_AGENT,
-                      'X-GitHub-Api-Version': '2022-11-28',
-                      'Cache-Control': 'no-cache'
+          const candidateRepos = [configuredRepo];
+          if (configuredRepo !== 'CV') candidateRepos.push('CV');
+
+          let uploaded = false;
+          let uploadError = 'Upload failed';
+
+          for (const repoName of candidateRepos) {
+              const existingFileResponse = await fetch(
+                  `${GITHUB_API_BASE}/repos/${CONTENT_REPO_OWNER}/${repoName}/contents/${uploadPath}?ref=${encodeURIComponent(CONTENT_REPO_BRANCH)}`,
+                  {
+                      cache: 'no-store',
+                      headers: {
+                          Authorization: `Bearer ${GITHUB_TOKEN}`,
+                          Accept: 'application/vnd.github+json',
+                          'User-Agent': GITHUB_USER_AGENT,
+                          'X-GitHub-Api-Version': '2022-11-28',
+                          'Cache-Control': 'no-cache'
+                      }
                   }
+              );
+
+              let sha: string | undefined;
+              if (existingFileResponse.ok) {
+                  const existingJson = await existingFileResponse.json() as { sha?: string };
+                  sha = existingJson.sha;
+              } else if (existingFileResponse.status === 401) {
+                  return json({ error: 'GitHub authentication failed (401 Bad credentials). Check GITHUB_TOKEN in Vercel environment variables.' }, 500);
+              } else if (existingFileResponse.status === 403) {
+                  return json({ error: 'GitHub upload forbidden (403). Ensure GITHUB_TOKEN has "Contents: Read and write" permission.' }, 500);
+              } else if (existingFileResponse.status === 404) {
+                  // Might be new file or wrong repo candidate
+              } else {
+                  const text = await existingFileResponse.text();
+                  console.error('GitHub file lookup failed:', existingFileResponse.status, text);
+                  return json({ error: `GitHub upload lookup failed (${existingFileResponse.status})` }, 500);
               }
-          );
 
-          let sha: string | undefined;
-          if (existingFileResponse.ok) {
-              const existingJson = await existingFileResponse.json() as { sha?: string };
-              sha = existingJson.sha;
-          } else if (existingFileResponse.status === 401) {
-              return json({ error: 'GitHub authentication failed (401 Bad credentials). Check GITHUB_TOKEN in Vercel environment variables.' }, 500);
-          } else if (existingFileResponse.status === 403) {
-              return json({ error: 'GitHub upload forbidden (403). Ensure GITHUB_TOKEN has "Contents: Read and write" permission.' }, 500);
-          } else if (existingFileResponse.status !== 404) {
-              const text = await existingFileResponse.text();
-              console.error('GitHub file lookup failed:', existingFileResponse.status, text);
-              return json({ error: `GitHub upload lookup failed (${existingFileResponse.status})` }, 500);
-          }
+              const response = await fetch(
+                  `${GITHUB_API_BASE}/repos/${CONTENT_REPO_OWNER}/${repoName}/contents/${uploadPath}`,
+                  {
+                      method: 'PUT',
+                      headers: {
+                          Authorization: `Bearer ${GITHUB_TOKEN}`,
+                          Accept: 'application/vnd.github+json',
+                          'User-Agent': GITHUB_USER_AGENT,
+                          'Content-Type': 'application/json',
+                          'X-GitHub-Api-Version': '2022-11-28'
+                      },
+                      body: JSON.stringify({
+                          message: `Upload ${fileName} from admin portal`,
+                          content: buffer.toString('base64'),
+                          sha,
+                          branch: CONTENT_REPO_BRANCH
+                      })
+                  }
+              );
 
-          const response = await fetch(
-              `${GITHUB_API_BASE}/repos/${CONTENT_REPO_OWNER}/${CONTENT_REPO_NAME}/contents/${uploadPath}`,
-              {
-                  method: 'PUT',
-                  headers: {
-                      Authorization: `Bearer ${GITHUB_TOKEN}`,
-                      Accept: 'application/vnd.github+json',
-                      'User-Agent': GITHUB_USER_AGENT,
-                      'Content-Type': 'application/json',
-                      'X-GitHub-Api-Version': '2022-11-28'
-                  },
-                  body: JSON.stringify({
-                      message: `Upload ${fileName} from admin portal`,
-                      content: buffer.toString('base64'),
-                      sha,
-                      branch: CONTENT_REPO_BRANCH
-                  })
+              if (response.ok) {
+                  uploaded = true;
+                  break;
               }
-          );
 
-          if (!response.ok) {
               const text = await response.text();
               console.error('GitHub upload failed:', response.status, text);
+              if (response.status === 404 && repoName !== candidateRepos[candidateRepos.length - 1]) {
+                  continue;
+              }
               if (response.status === 401) {
                   return json({ error: 'GitHub authentication failed (401 Bad credentials). Check GITHUB_TOKEN in Vercel environment variables.' }, 500);
               }
               if (response.status === 403) {
                   return json({ error: 'GitHub upload permission denied (403). Ensure token has "Contents: Read and write" permission.' }, 500);
               }
-              return json({ error: `Upload failed with status ${response.status}` }, 500);
+              uploadError = `Upload failed with status ${response.status}: ${text}`;
+          }
+
+          if (!uploaded) {
+              return json({ error: uploadError }, 500);
           }
       } else {
           const uploadDir = path.join(process.cwd(), 'public', 'uploads');

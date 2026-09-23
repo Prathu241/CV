@@ -110,9 +110,15 @@ export function getContentRepoOwner(): string {
 
 export function getContentRepoName(): string {
     const configured = getEnv('CONTENT_REPO_NAME');
-    return configured && configured !== 'your-repo-name'
-        ? configured
-        : DEFAULT_CONTENT_REPO_NAME;
+    if (!configured || configured === 'your-repo-name') {
+        return DEFAULT_CONTENT_REPO_NAME;
+    }
+    const clean = configured.trim();
+    // Normalize variations where project was named 'Prathu-cv' or 'prathu-cv' instead of actual GitHub repo 'CV'
+    if (clean.toLowerCase() === 'prathu-cv' || clean.toLowerCase() === 'prathu_cv') {
+        return DEFAULT_CONTENT_REPO_NAME; // 'CV'
+    }
+    return clean;
 }
 
 export function getContentRepoBranch(): string {
@@ -157,118 +163,165 @@ function toJsonString(value: unknown): string {
 
 async function readGithubContent() {
     const CONTENT_REPO_OWNER = getContentRepoOwner();
-    const CONTENT_REPO_NAME = getContentRepoName();
+    const configuredRepo = getContentRepoName();
     const CONTENT_REPO_BRANCH = getContentRepoBranch();
     const CONTENT_REPO_PATH = getContentRepoPath();
     const GITHUB_TOKEN = getGithubToken();
 
-    const response = await fetch(
-        `${GITHUB_API_BASE}/repos/${CONTENT_REPO_OWNER}/${CONTENT_REPO_NAME}/contents/${CONTENT_REPO_PATH}?ref=${encodeURIComponent(CONTENT_REPO_BRANCH)}`,
-        {
-            cache: 'no-store',
-            headers: {
-                Authorization: `Bearer ${GITHUB_TOKEN}`,
-                Accept: 'application/vnd.github+json',
-                'User-Agent': GITHUB_USER_AGENT,
-                'X-GitHub-Api-Version': '2022-11-28',
-                'Cache-Control': 'no-cache'
+    const candidateRepos = [configuredRepo];
+    if (configuredRepo !== 'CV') {
+        candidateRepos.push('CV');
+    }
+
+    for (const repoName of candidateRepos) {
+        try {
+            const response = await fetch(
+                `${GITHUB_API_BASE}/repos/${CONTENT_REPO_OWNER}/${repoName}/contents/${CONTENT_REPO_PATH}?ref=${encodeURIComponent(CONTENT_REPO_BRANCH)}`,
+                {
+                    cache: 'no-store',
+                    headers: {
+                        Authorization: `Bearer ${GITHUB_TOKEN}`,
+                        Accept: 'application/vnd.github+json',
+                        'User-Agent': GITHUB_USER_AGENT,
+                        'X-GitHub-Api-Version': '2022-11-28',
+                        'Cache-Control': 'no-cache'
+                    }
+                }
+            );
+
+            if (!response.ok) {
+                if (response.status === 404 && repoName !== candidateRepos[candidateRepos.length - 1]) {
+                    continue;
+                }
+                throw new Error(`GitHub content read failed: ${response.status}`);
             }
+
+            const payload = await response.json() as { content?: string; encoding?: string };
+
+            if (!payload.content) {
+                return null;
+            }
+
+            if (payload.encoding === 'base64') {
+                const content = Buffer.from(payload.content.replace(/\n/g, ''), 'base64').toString('utf-8');
+                return JSON.parse(content);
+            }
+
+            return JSON.parse(payload.content);
+        } catch (e) {
+            if (repoName !== candidateRepos[candidateRepos.length - 1]) {
+                continue;
+            }
+            throw e;
         }
-    );
-
-    if (!response.ok) {
-        throw new Error(`GitHub content read failed: ${response.status}`);
     }
 
-    const payload = await response.json() as { content?: string; encoding?: string };
-
-    if (!payload.content) {
-        return null;
-    }
-
-    if (payload.encoding === 'base64') {
-        const content = Buffer.from(payload.content.replace(/\n/g, ''), 'base64').toString('utf-8');
-        return JSON.parse(content);
-    }
-
-    return JSON.parse(payload.content);
+    return null;
 }
 
 async function writeGithubContent(newData: unknown): Promise<boolean> {
     const CONTENT_REPO_OWNER = getContentRepoOwner();
-    const CONTENT_REPO_NAME = getContentRepoName();
+    const configuredRepo = getContentRepoName();
     const CONTENT_REPO_BRANCH = getContentRepoBranch();
     const CONTENT_REPO_PATH = getContentRepoPath();
     const GITHUB_TOKEN = getGithubToken();
 
-    const fileResponse = await fetch(
-        `${GITHUB_API_BASE}/repos/${CONTENT_REPO_OWNER}/${CONTENT_REPO_NAME}/contents/${CONTENT_REPO_PATH}?ref=${encodeURIComponent(CONTENT_REPO_BRANCH)}`,
-        {
-            cache: 'no-store',
-            headers: {
-                Authorization: `Bearer ${GITHUB_TOKEN}`,
-                Accept: 'application/vnd.github+json',
-                'User-Agent': GITHUB_USER_AGENT,
-                'X-GitHub-Api-Version': '2022-11-28',
-                'Cache-Control': 'no-cache'
+    const candidateRepos = [configuredRepo];
+    if (configuredRepo !== 'CV') {
+        candidateRepos.push('CV');
+    }
+
+    let lastError: Error | null = null;
+
+    for (const repoName of candidateRepos) {
+        try {
+            const fileResponse = await fetch(
+                `${GITHUB_API_BASE}/repos/${CONTENT_REPO_OWNER}/${repoName}/contents/${CONTENT_REPO_PATH}?ref=${encodeURIComponent(CONTENT_REPO_BRANCH)}`,
+                {
+                    cache: 'no-store',
+                    headers: {
+                        Authorization: `Bearer ${GITHUB_TOKEN}`,
+                        Accept: 'application/vnd.github+json',
+                        'User-Agent': GITHUB_USER_AGENT,
+                        'X-GitHub-Api-Version': '2022-11-28',
+                        'Cache-Control': 'no-cache'
+                    }
+                }
+            );
+
+            let sha: string | undefined;
+            if (fileResponse.ok) {
+                const fileJson = await fileResponse.json() as { sha?: string };
+                sha = fileJson.sha;
+            } else if (fileResponse.status === 401) {
+                throw new Error('GitHub authentication failed (401 Bad credentials). The GITHUB_TOKEN configured in Vercel is invalid or expired. Please check your GitHub Personal Access Token in Vercel Project Settings.');
+            } else if (fileResponse.status === 403) {
+                const errText = await fileResponse.text();
+                throw new Error(`GitHub access forbidden (403): ${errText}. Ensure your token has "Contents: Read and write" permission for ${CONTENT_REPO_OWNER}/${repoName}.`);
+            } else if (fileResponse.status === 404) {
+                // If 404 and we have another candidate repo (like CV), try that candidate first
+                if (repoName !== candidateRepos[candidateRepos.length - 1]) {
+                    continue;
+                }
+            } else {
+                const errorText = await fileResponse.text();
+                console.error('GitHub content file metadata fetch failed:', fileResponse.status, errorText);
+                throw new Error(`GitHub metadata fetch failed (${fileResponse.status}): ${errorText}`);
             }
-        }
-    );
 
-    let sha: string | undefined;
-    if (fileResponse.ok) {
-        const fileJson = await fileResponse.json() as { sha?: string };
-        sha = fileJson.sha;
-    } else if (fileResponse.status === 401) {
-        throw new Error('GitHub authentication failed (401 Bad credentials). The GITHUB_TOKEN configured in Vercel is invalid or expired. Please check your GitHub Personal Access Token in Vercel Project Settings.');
-    } else if (fileResponse.status === 403) {
-        const errText = await fileResponse.text();
-        throw new Error(`GitHub access forbidden (403): ${errText}. Ensure your token has "Contents: Read and write" permission for ${CONTENT_REPO_OWNER}/${CONTENT_REPO_NAME}.`);
-    } else if (fileResponse.status !== 404) {
-        const errorText = await fileResponse.text();
-        console.error('GitHub content file metadata fetch failed:', fileResponse.status, errorText);
-        throw new Error(`GitHub metadata fetch failed (${fileResponse.status}): ${errorText}`);
+            const response = await fetch(
+                `${GITHUB_API_BASE}/repos/${CONTENT_REPO_OWNER}/${repoName}/contents/${CONTENT_REPO_PATH}`,
+                {
+                    method: 'PUT',
+                    headers: {
+                        Authorization: `Bearer ${GITHUB_TOKEN}`,
+                        Accept: 'application/vnd.github+json',
+                        'User-Agent': GITHUB_USER_AGENT,
+                        'Content-Type': 'application/json',
+                        'X-GitHub-Api-Version': '2022-11-28'
+                    },
+                    body: JSON.stringify({
+                        message: 'Update portfolio content from admin portal',
+                        content: Buffer.from(toJsonString(newData), 'utf-8').toString('base64'),
+                        sha,
+                        branch: CONTENT_REPO_BRANCH
+                    })
+                }
+            );
+
+            if (!response.ok) {
+                if (response.status === 404 && repoName !== candidateRepos[candidateRepos.length - 1]) {
+                    continue;
+                }
+                const text = await response.text();
+                console.error('GitHub content write failed:', response.status, text);
+                if (response.status === 401) {
+                    throw new Error('GitHub authentication failed (401 Bad credentials). The GITHUB_TOKEN in your Vercel project environment variables is invalid, expired, or revoked. Please create a new Personal Access Token with repo/contents permissions and update it in Vercel Settings -> Environment Variables.');
+                }
+                if (response.status === 403) {
+                    throw new Error(`GitHub permission denied (403). Ensure your GITHUB_TOKEN has "Contents: Read and write" repository permissions for ${CONTENT_REPO_OWNER}/${repoName}.`);
+                }
+                if (response.status === 404) {
+                    throw new Error(`GitHub repository or branch not found (404). Check owner "${CONTENT_REPO_OWNER}", repo "${repoName}", and branch "${CONTENT_REPO_BRANCH}".`);
+                }
+                if (response.status === 409) {
+                    throw new Error('GitHub conflict (409): The content file was updated concurrently. Please refresh the page and try your changes again.');
+                }
+                throw new Error(text || `GitHub content write failed with status ${response.status}`);
+            }
+
+            return true;
+        } catch (err: any) {
+            lastError = err;
+            if (err.message && err.message.includes('404') && repoName !== candidateRepos[candidateRepos.length - 1]) {
+                continue;
+            }
+            throw err;
+        }
     }
 
-    const response = await fetch(
-        `${GITHUB_API_BASE}/repos/${CONTENT_REPO_OWNER}/${CONTENT_REPO_NAME}/contents/${CONTENT_REPO_PATH}`,
-        {
-            method: 'PUT',
-            headers: {
-                Authorization: `Bearer ${GITHUB_TOKEN}`,
-                Accept: 'application/vnd.github+json',
-                'User-Agent': GITHUB_USER_AGENT,
-                'Content-Type': 'application/json',
-                'X-GitHub-Api-Version': '2022-11-28'
-            },
-            body: JSON.stringify({
-                message: 'Update portfolio content from admin portal',
-                content: Buffer.from(toJsonString(newData), 'utf-8').toString('base64'),
-                sha,
-                branch: CONTENT_REPO_BRANCH
-            })
-        }
-    );
-
-    if (!response.ok) {
-        const text = await response.text();
-        console.error('GitHub content write failed:', response.status, text);
-        if (response.status === 401) {
-            throw new Error('GitHub authentication failed (401 Bad credentials). The GITHUB_TOKEN in your Vercel project environment variables is invalid, expired, or revoked. Please create a new Personal Access Token with repo/contents permissions and update it in Vercel Settings -> Environment Variables.');
-        }
-        if (response.status === 403) {
-            throw new Error(`GitHub permission denied (403). Ensure your GITHUB_TOKEN has "Contents: Read and write" repository permissions for ${CONTENT_REPO_OWNER}/${CONTENT_REPO_NAME}.`);
-        }
-        if (response.status === 404) {
-            throw new Error(`GitHub repository or branch not found (404). Check owner "${CONTENT_REPO_OWNER}", repo "${CONTENT_REPO_NAME}", and branch "${CONTENT_REPO_BRANCH}".`);
-        }
-        if (response.status === 409) {
-            throw new Error('GitHub conflict (409): The content file was updated concurrently. Please refresh the page and try your changes again.');
-        }
-        throw new Error(text || `GitHub content write failed with status ${response.status}`);
-    }
-
-    return true;
+    if (lastError) throw lastError;
+    return false;
 }
 
 async function readLocalContent() {
