@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { AUTH_CONFIGURED, createSession, credentialsMatch, EDITOR_PASS, EDITOR_USER, isTrustedOrigin } from '../../../lib/auth';
+import { isAuthConfigured, createSession, credentialsMatch, getEditorPass, getEditorUser, isTrustedOrigin } from '../../../lib/auth';
 
 const MAX_ATTEMPTS = 8;
 const WINDOW_MS = 10 * 60 * 1000;
@@ -24,7 +24,7 @@ function getClientIp(request: Request): string {
 }
 
 export const POST: APIRoute = async ({ request, cookies }) => {
-  if (!AUTH_CONFIGURED) {
+  if (!isAuthConfigured()) {
     return json({ error: 'Editor access is not configured' }, 503);
   }
 
@@ -44,7 +44,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   const username = data.get('username')?.toString().trim();
   const password = data.get('password')?.toString();
 
-  if (!EDITOR_USER || !EDITOR_PASS) {
+  if (!getEditorUser() || !getEditorPass()) {
     return json({ error: 'Server authentication is not configured' }, 503);
   }
 

@@ -43,8 +43,8 @@ const { initialData } = Astro.props;
 </style>
 
 <script define:vars={{ initialData }}>
-    // Store full content in window for easy access
-    window.siteContent = initialData;
+    // Store content in local component scope to prevent global tampering
+    let currentSiteContent = initialData;
     
     const modal = document.getElementById('visual-editor-modal');
     const formContainer = document.getElementById('modal-form-container');
@@ -52,16 +52,252 @@ const { initialData } = Astro.props;
     let currentSection = null;
     let currentOriginalData = null;
 
-    // Open Modal Function (Global)
+    // Helper functions for safe DOM node creation (prevents DOM XSS)
+    function createFormGroup(labelText, inputElement) {
+        const div = document.createElement('div');
+        const label = document.createElement('label');
+        label.className = 'block text-xs text-gray-500 font-mono mb-1';
+        label.textContent = labelText;
+        div.appendChild(label);
+        div.appendChild(inputElement);
+        return div;
+    }
+
+    function createInput(value, dataField, isTextarea = false, rows = 2) {
+        const el = isTextarea ? document.createElement('textarea') : document.createElement('input');
+        if (!isTextarea) {
+            el.type = 'text';
+        } else {
+            el.rows = rows;
+        }
+        el.className = 'w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none';
+        el.value = value || '';
+        if (dataField) el.dataset.field = dataField;
+        return el;
+    }
+
+    // Project Card Builder
+    function createProjectCard(project, idx) {
+        const card = document.createElement('div');
+        card.className = 'project-entry p-4 border border-white/10 bg-black/30 rounded-lg space-y-3';
+
+        const header = document.createElement('div');
+        header.className = 'flex justify-between items-center mb-2';
+
+        const title = document.createElement('h4');
+        title.className = 'text-sm font-mono text-primary';
+        title.textContent = `Project ${idx + 1}`;
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'text-red-400 hover:text-red-300 text-xs px-2 py-1 border border-red-400/30 rounded';
+        removeBtn.textContent = 'Remove';
+        removeBtn.dataset.remove = 'project';
+
+        header.appendChild(title);
+        header.appendChild(removeBtn);
+        card.appendChild(header);
+
+        card.appendChild(createFormGroup('Title', createInput(project.title, 'title')));
+        card.appendChild(createFormGroup('Description', createInput(project.desc, 'desc', true, 2)));
+        card.appendChild(createFormGroup('Tech (comma-separated)', createInput(Array.isArray(project.tech) ? project.tech.join(', ') : '', 'tech')));
+        card.appendChild(createFormGroup('GitHub Link', createInput(project.github, 'github')));
+        card.appendChild(createFormGroup('Website Link', createInput(project.link, 'link')));
+
+        return card;
+    }
+
+    function createProjectsEditor(projects) {
+        const container = document.createElement('div');
+        container.className = 'space-y-6';
+
+        (projects || []).forEach((project, idx) => {
+            container.appendChild(createProjectCard(project, idx));
+        });
+
+        const addBtn = document.createElement('button');
+        addBtn.type = 'button';
+        addBtn.className = 'w-full px-4 py-2 mt-4 bg-primary/20 border border-primary text-primary text-xs font-mono hover:bg-primary/30 transition-colors rounded';
+        addBtn.textContent = '+ Add New Project';
+        addBtn.onclick = () => {
+            const currentCount = container.querySelectorAll('.project-entry').length;
+            const newCard = createProjectCard({
+                title: 'New Project',
+                desc: 'Project description',
+                tech: ['Tech'],
+                github: 'https://github.com/',
+                link: 'https://github.com/'
+            }, currentCount);
+            addBtn.insertAdjacentElement('beforebegin', newCard);
+        };
+        container.appendChild(addBtn);
+
+        formContainer.appendChild(container);
+    }
+
+    // Skill Card Builder
+    function createSkillCard(skill, idx) {
+        const card = document.createElement('div');
+        card.className = 'skill-entry p-3 border border-white/10 bg-black/30 rounded-lg flex gap-3 items-end';
+
+        const div = document.createElement('div');
+        div.className = 'flex-1';
+        const label = document.createElement('label');
+        label.className = 'block text-xs text-gray-500 font-mono mb-1';
+        label.textContent = 'Skill Name';
+
+        const input = createInput(skill.name, 'name');
+        div.appendChild(label);
+        div.appendChild(input);
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'text-red-400 hover:text-red-300 text-xs px-2 py-1 border border-red-400/30 rounded';
+        removeBtn.textContent = 'Remove';
+        removeBtn.dataset.remove = 'skill';
+
+        card.appendChild(div);
+        card.appendChild(removeBtn);
+        return card;
+    }
+
+    function createSkillsEditor(skills) {
+        const container = document.createElement('div');
+        container.className = 'space-y-4';
+
+        (skills || []).forEach((skill, idx) => {
+            container.appendChild(createSkillCard(skill, idx));
+        });
+
+        const addBtn = document.createElement('button');
+        addBtn.type = 'button';
+        addBtn.className = 'w-full px-4 py-2 mt-4 bg-primary/20 border border-primary text-primary text-xs font-mono hover:bg-primary/30 transition-colors rounded';
+        addBtn.textContent = '+ Add New Skill';
+        addBtn.onclick = () => {
+            const currentCount = container.querySelectorAll('.skill-entry').length;
+            const newCard = createSkillCard({ name: 'New Skill' }, currentCount);
+            addBtn.insertAdjacentElement('beforebegin', newCard);
+        };
+        container.appendChild(addBtn);
+        formContainer.appendChild(container);
+    }
+
+    // Experience Card Builder
+    function createExperienceCard(exp, idx) {
+        const card = document.createElement('div');
+        card.className = 'experience-entry p-4 border border-white/10 bg-black/30 rounded-lg space-y-3';
+
+        const header = document.createElement('div');
+        header.className = 'flex justify-between items-center mb-2';
+
+        const title = document.createElement('h4');
+        title.className = 'text-sm font-mono text-primary';
+        title.textContent = `Experience ${idx + 1}`;
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'text-red-400 hover:text-red-300 text-xs px-2 py-1 border border-red-400/30 rounded';
+        removeBtn.textContent = 'Remove';
+        removeBtn.dataset.remove = 'experience';
+
+        header.appendChild(title);
+        header.appendChild(removeBtn);
+        card.appendChild(header);
+
+        card.appendChild(createFormGroup('Role', createInput(exp.role, 'role')));
+        card.appendChild(createFormGroup('Company', createInput(exp.company, 'company')));
+        card.appendChild(createFormGroup('Date', createInput(exp.date, 'date')));
+        card.appendChild(createFormGroup('Description', createInput(exp.desc, 'desc', true, 2)));
+
+        const detailsText = Array.isArray(exp.details) ? exp.details.join('\n') : '';
+        card.appendChild(createFormGroup('Bullet Points (one per line)', createInput(detailsText, 'details', true, 3)));
+
+        return card;
+    }
+
+    function createExperienceEditor(experiences) {
+        const container = document.createElement('div');
+        container.className = 'space-y-6';
+
+        (experiences || []).forEach((exp, idx) => {
+            container.appendChild(createExperienceCard(exp, idx));
+        });
+
+        const addBtn = document.createElement('button');
+        addBtn.type = 'button';
+        addBtn.className = 'w-full px-4 py-2 mt-4 bg-primary/20 border border-primary text-primary text-xs font-mono hover:bg-primary/30 transition-colors rounded';
+        addBtn.textContent = '+ Add New Experience';
+        addBtn.onclick = () => {
+            const currentCount = container.querySelectorAll('.experience-entry').length;
+            const newCard = createExperienceCard({
+                role: 'New Role',
+                company: 'Company Name',
+                date: 'Date',
+                desc: 'Description',
+                details: []
+            }, currentCount);
+            addBtn.insertAdjacentElement('beforebegin', newCard);
+        };
+        container.appendChild(addBtn);
+        formContainer.appendChild(container);
+    }
+
+    // Generic Fields Builder (for Profile, etc.)
+    function generateFields(data, context) {
+        if (!data || typeof data !== 'object') return;
+        Object.keys(data).forEach(key => {
+            const val = data[key];
+            if (typeof val === 'string' || typeof val === 'number') {
+                createInputField(key, String(val), context);
+            }
+        });
+    }
+
+    function createInputField(label, value, section) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'mb-4';
+        
+        const labelEl = document.createElement('label');
+        labelEl.className = 'block text-xs font-mono text-gray-500 uppercase mb-1';
+        labelEl.textContent = label;
+        
+        let input;
+        if (value && value.length > 60) {
+            input = document.createElement('textarea');
+            input.rows = 4;
+            input.className = "w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none";
+        } else {
+            input = document.createElement('input');
+            input.type = 'text';
+            input.className = "w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none";
+        }
+        input.value = value || '';
+        input.dataset.key = label;
+        input.dataset.section = section;
+        
+        wrapper.appendChild(labelEl);
+        wrapper.appendChild(input);
+        formContainer.appendChild(wrapper);
+    }
+
+    // Delegated Remove Handler attached ONCE
+    formContainer.addEventListener('click', (e) => {
+        const target = e.target;
+        if (target && target.matches && target.matches('button[data-remove]')) {
+            e.preventDefault();
+            target.closest('.project-entry, .skill-entry, .experience-entry, .p-4, .p-3')?.remove();
+        }
+    });
+
+    // Open Modal Function (Global Interface for buttons)
     window.openVisualEditor = (sectionKey) => {
         currentSection = sectionKey;
-        const data = window.siteContent[sectionKey];
-        currentOriginalData = JSON.parse(JSON.stringify(data)); // Deep copy
+        const data = currentSiteContent ? currentSiteContent[sectionKey] : null;
+        currentOriginalData = data ? JSON.parse(JSON.stringify(data)) : null;
         
-        modalTitle.innerText = `EDITING: ${sectionKey.toUpperCase()}`;
-        formContainer.innerHTML = ''; // Clear previous fields
+        modalTitle.textContent = `EDITING: ${sectionKey.toUpperCase()}`;
+        formContainer.innerHTML = ''; // Clear previous fields safely
         
-        // Generate Form Fields
         if (sectionKey === 'projects') {
             createProjectsEditor(data);
         } else if (sectionKey === 'skills') {
@@ -75,328 +311,75 @@ const { initialData } = Astro.props;
         modal.classList.remove('hidden');
     };
 
-    function createProjectsEditor(projects) {
-        const container = document.createElement('div');
-        container.className = 'space-y-6';
-
-        projects.forEach((project, idx) => {
-            const card = document.createElement('div');
-            card.className = 'p-4 border border-white/10 bg-black/30 rounded-lg space-y-3';
-            card.innerHTML = `
-                <div class="flex justify-between items-center mb-2">
-                    <h4 class="text-sm font-mono text-primary">Project ${idx + 1}</h4>
-                    <button type="button" class="text-red-400 hover:text-red-300 text-xs px-2 py-1 border border-red-400/30 rounded" data-remove="${idx}">Remove</button>
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-500 font-mono mb-1">Title</label>
-                    <input type="text" value="${project.title}" class="w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none" data-field="title" data-index="${idx}">
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-500 font-mono mb-1">Description</label>
-                    <textarea rows="2" class="w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none" data-field="desc" data-index="${idx}">${project.desc}</textarea>
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-500 font-mono mb-1">Tech (comma-separated)</label>
-                    <input type="text" value="${project.tech.join(', ')}" class="w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none" data-field="tech" data-index="${idx}">
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-500 font-mono mb-1">GitHub Link</label>
-                    <input type="text" value="${project.github}" class="w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none" data-field="github" data-index="${idx}">
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-500 font-mono mb-1">Website Link</label>
-                    <input type="text" value="${project.link}" class="w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none" data-field="link" data-index="${idx}">
-                </div>
-            `;
-            container.appendChild(card);
-        });
-
-        // Add New Project Button
-        const addBtn = document.createElement('button');
-        addBtn.type = 'button';
-        addBtn.className = 'w-full px-4 py-2 mt-4 bg-primary/20 border border-primary text-primary text-xs font-mono hover:bg-primary/30 transition-colors rounded';
-        addBtn.innerText = '+ Add New Project';
-        addBtn.onclick = addNewProject;
-        container.appendChild(addBtn);
-
-        formContainer.appendChild(container);
-
-        // Remove button handlers
-        formContainer.addEventListener('click', (e) => {
-            if (e.target.dataset.remove !== undefined) {
-                e.preventDefault();
-                const idx = parseInt(e.target.dataset.remove);
-                e.target.closest('[data-index]')?.parentElement?.remove() || e.target.closest('.p-4').remove();
-            }
-        });
-    }
-
-    function addNewProject() {
-        const newProject = {
-            title: "New Project",
-            desc: "Project description",
-            tech: ["Tech"],
-            github: "https://github.com/",
-            link: "https://github.com/"
-        };
-
-        const idx = formContainer.querySelectorAll('[data-field="title"]').length;
-        const card = document.createElement('div');
-        card.className = 'p-4 border border-white/10 bg-black/30 rounded-lg space-y-3';
-        card.innerHTML = `
-            <div class="flex justify-between items-center mb-2">
-                <h4 class="text-sm font-mono text-primary">Project ${idx + 1}</h4>
-                <button type="button" class="text-red-400 hover:text-red-300 text-xs px-2 py-1 border border-red-400/30 rounded" data-remove="${idx}">Remove</button>
-            </div>
-            <div>
-                <label class="block text-xs text-gray-500 font-mono mb-1">Title</label>
-                <input type="text" value="New Project" class="w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none" data-field="title" data-index="${idx}">
-            </div>
-            <div>
-                <label class="block text-xs text-gray-500 font-mono mb-1">Description</label>
-                <textarea rows="2" class="w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none" data-field="desc" data-index="${idx}">Project description</textarea>
-            </div>
-            <div>
-                <label class="block text-xs text-gray-500 font-mono mb-1">Tech (comma-separated)</label>
-                <input type="text" value="Tech" class="w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none" data-field="tech" data-index="${idx}">
-            </div>
-            <div>
-                <label class="block text-xs text-gray-500 font-mono mb-1">GitHub Link</label>
-                <input type="text" value="https://github.com/" class="w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none" data-field="github" data-index="${idx}">
-            </div>
-            <div>
-                <label class="block text-xs text-gray-500 font-mono mb-1">Website Link</label>
-                <input type="text" value="https://github.com/" class="w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none" data-field="link" data-index="${idx}">
-            </div>
-        `;
-        formContainer.querySelector('button[type="button"]')?.insertAdjacentElement('beforebegin', card);
-    }
-
-    function createSkillsEditor(skills) {
-        const container = document.createElement('div');
-        container.className = 'space-y-4';
-
-        skills.forEach((skill, idx) => {
-            const card = document.createElement('div');
-            card.className = 'p-3 border border-white/10 bg-black/30 rounded-lg flex gap-3 items-end';
-            card.innerHTML = `
-                <div class="flex-1">
-                    <label class="block text-xs text-gray-500 font-mono mb-1">Skill Name</label>
-                    <input type="text" value="${skill.name}" class="w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none" data-field="name" data-index="${idx}">
-                </div>
-                <button type="button" class="text-red-400 hover:text-red-300 text-xs px-2 py-1 border border-red-400/30 rounded" data-remove="${idx}">Remove</button>
-            `;
-            container.appendChild(card);
-        });
-
-        const addBtn = document.createElement('button');
-        addBtn.type = 'button';
-        addBtn.className = 'w-full px-4 py-2 mt-4 bg-primary/20 border border-primary text-primary text-xs font-mono hover:bg-primary/30 transition-colors rounded';
-        addBtn.innerText = '+ Add New Skill';
-        addBtn.onclick = () => {
-            const idx = container.querySelectorAll('[data-field="name"]').length;
-            const card = document.createElement('div');
-            card.className = 'p-3 border border-white/10 bg-black/30 rounded-lg flex gap-3 items-end';
-            card.innerHTML = `
-                <div class="flex-1">
-                    <label class="block text-xs text-gray-500 font-mono mb-1">Skill Name</label>
-                    <input type="text" value="New Skill" class="w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none" data-field="name" data-index="${idx}">
-                </div>
-                <button type="button" class="text-red-400 hover:text-red-300 text-xs px-2 py-1 border border-red-400/30 rounded" data-remove="${idx}">Remove</button>
-            `;
-            addBtn.insertAdjacentElement('beforebegin', card);
-        };
-        container.appendChild(addBtn);
-        formContainer.appendChild(container);
-
-        formContainer.addEventListener('click', (e) => {
-            if (e.target.dataset.remove !== undefined) {
-                e.preventDefault();
-                e.target.closest('.p-3')?.remove();
-            }
-        });
-    }
-
-    function createExperienceEditor(experiences) {
-        const container = document.createElement('div');
-        container.className = 'space-y-6';
-
-        experiences.forEach((exp, idx) => {
-            const card = document.createElement('div');
-            card.className = 'p-4 border border-white/10 bg-black/30 rounded-lg space-y-3';
-            card.innerHTML = `
-                <div class="flex justify-between items-center mb-2">
-                    <h4 class="text-sm font-mono text-primary">Experience ${idx + 1}</h4>
-                    <button type="button" class="text-red-400 hover:text-red-300 text-xs px-2 py-1 border border-red-400/30 rounded" data-remove="${idx}">Remove</button>
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-500 font-mono mb-1">Role</label>
-                    <input type="text" value="${exp.role}" class="w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none" data-field="role" data-index="${idx}">
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-500 font-mono mb-1">Company</label>
-                    <input type="text" value="${exp.company}" class="w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none" data-field="company" data-index="${idx}">
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-500 font-mono mb-1">Date</label>
-                    <input type="text" value="${exp.date}" class="w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none" data-field="date" data-index="${idx}">
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-500 font-mono mb-1">Description</label>
-                    <textarea rows="2" class="w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none" data-field="desc" data-index="${idx}">${exp.desc}</textarea>
-                </div>
-            `;
-            container.appendChild(card);
-        });
-
-        const addBtn = document.createElement('button');
-        addBtn.type = 'button';
-        addBtn.className = 'w-full px-4 py-2 mt-4 bg-primary/20 border border-primary text-primary text-xs font-mono hover:bg-primary/30 transition-colors rounded';
-        addBtn.innerText = '+ Add New Experience';
-        addBtn.onclick = () => {
-            const idx = container.querySelectorAll('[data-field="role"]').length;
-            const card = document.createElement('div');
-            card.className = 'p-4 border border-white/10 bg-black/30 rounded-lg space-y-3';
-            card.innerHTML = `
-                <div class="flex justify-between items-center mb-2">
-                    <h4 class="text-sm font-mono text-primary">Experience ${idx + 1}</h4>
-                    <button type="button" class="text-red-400 hover:text-red-300 text-xs px-2 py-1 border border-red-400/30 rounded" data-remove="${idx}">Remove</button>
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-500 font-mono mb-1">Role</label>
-                    <input type="text" value="New Role" class="w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none" data-field="role" data-index="${idx}">
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-500 font-mono mb-1">Company</label>
-                    <input type="text" value="Company Name" class="w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none" data-field="company" data-index="${idx}">
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-500 font-mono mb-1">Date</label>
-                    <input type="text" value="Date" class="w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none" data-field="date" data-index="${idx}">
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-500 font-mono mb-1">Description</label>
-                    <textarea rows="2" class="w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none" data-field="desc" data-index="${idx}">Description</textarea>
-                </div>
-            `;
-            addBtn.insertAdjacentElement('beforebegin', card);
-        };
-        container.appendChild(addBtn);
-        formContainer.appendChild(container);
-
-        formContainer.addEventListener('click', (e) => {
-            if (e.target.dataset.remove !== undefined) {
-                e.preventDefault();
-                e.target.closest('.p-4')?.remove();
-            }
-        });
-    }
-
-    function generateFields(data, context, parentKey = '') {
-        if (typeof data === 'string' || typeof data === 'number') {
-            createInputField(context, data, parentKey);
-        } else if (typeof data === 'object' && data !== null) {
-            Object.keys(data).forEach(key => {
-                 const newKey = parentKey ? `${parentKey}.${key}` : key;
-                 if (typeof data[key] === 'string' || typeof data[key] === 'number') {
-                     createInputField(key, data[key], context);
-                 }
-            });
-        }
-    }
-
-    function createInputField(label, value, section) {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'mb-4';
-        
-        const labelEl = document.createElement('label');
-        labelEl.className = 'block text-xs font-mono text-gray-500 uppercase mb-1';
-        labelEl.innerText = label;
-        
-        let input;
-        if (value && value.length > 60) {
-            input = document.createElement('textarea');
-            input.rows = 4;
-            input.className = "w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none";
-        } else {
-             input = document.createElement('input');
-             input.type = 'text';
-             input.className = "w-full bg-black/50 border border-white/10 p-2 text-white text-sm font-mono focus:border-primary focus:outline-none";
-        }
-        input.value = value || '';
-        input.dataset.key = label;
-        input.dataset.section = section;
-        
-        wrapper.appendChild(labelEl);
-        wrapper.appendChild(input);
-        formContainer.appendChild(wrapper);
-    }
-
-    // Handlers
+    // Modal Close Handlers
     document.getElementById('modal-close').onclick = () => modal.classList.add('hidden');
     document.getElementById('modal-cancel').onclick = () => modal.classList.add('hidden');
     document.getElementById('modal-backdrop').onclick = (e) => {
         if (e.target.id === 'modal-backdrop') modal.classList.add('hidden');
     };
 
+    // Save Changes Handler
     document.getElementById('modal-save').onclick = async () => {
         const btn = document.getElementById('modal-save');
-        btn.innerText = 'Saving...';
+        btn.textContent = 'Saving...';
+        btn.setAttribute('disabled', 'true');
         
         try {
-            const updatedData = JSON.parse(JSON.stringify(window.siteContent));
+            const updatedData = JSON.parse(JSON.stringify(currentSiteContent));
 
             if (currentSection === 'projects') {
+                const projectCards = formContainer.querySelectorAll('.project-entry');
                 const projects = [];
-                formContainer.querySelectorAll('[data-field="title"]').forEach((titleField, idx) => {
-                    const titleEls = formContainer.querySelectorAll(`[data-field="title"]`);
-                    const descEls = formContainer.querySelectorAll(`[data-field="desc"]`);
-                    const techEls = formContainer.querySelectorAll(`[data-field="tech"]`);
-                    const githubEls = formContainer.querySelectorAll(`[data-field="github"]`);
-                    const linkEls = formContainer.querySelectorAll(`[data-field="link"]`);
+                projectCards.forEach((card) => {
+                    const title = card.querySelector('[data-field="title"]')?.value.trim() || '';
+                    const desc = card.querySelector('[data-field="desc"]')?.value.trim() || '';
+                    const techRaw = card.querySelector('[data-field="tech"]')?.value || '';
+                    const tech = techRaw.split(',').map(t => t.trim()).filter(Boolean);
+                    const github = card.querySelector('[data-field="github"]')?.value.trim() || '';
+                    const link = card.querySelector('[data-field="link"]')?.value.trim() || '';
 
-                    if (titleEls[idx]) {
-                        projects.push({
-                            title: titleEls[idx].value,
-                            desc: descEls[idx]?.value || '',
-                            tech: techEls[idx]?.value.split(',').map(t => t.trim()).filter(t => t) || [],
-                            github: githubEls[idx]?.value || '',
-                            link: linkEls[idx]?.value || ''
-                        });
+                    if (title) {
+                        projects.push({ title, desc, tech, github, link });
                     }
                 });
                 updatedData.projects = projects;
             } else if (currentSection === 'skills') {
+                const skillCards = formContainer.querySelectorAll('.skill-entry');
                 const skills = [];
-                formContainer.querySelectorAll('[data-field="name"]').forEach((nameField) => {
-                    skills.push({ name: nameField.value, icon: 'https://skillicons.dev/icons?i=default' });
+                skillCards.forEach((card, idx) => {
+                    const name = card.querySelector('[data-field="name"]')?.value.trim() || '';
+                    if (name) {
+                        const originalIcon = currentOriginalData && currentOriginalData[idx]?.name === name 
+                            ? currentOriginalData[idx].icon 
+                            : 'https://skillicons.dev/icons?i=default';
+                        skills.push({ name, icon: originalIcon });
+                    }
                 });
                 updatedData.skills = skills;
             } else if (currentSection === 'experience') {
+                const expCards = formContainer.querySelectorAll('.experience-entry');
                 const experiences = [];
-                formContainer.querySelectorAll('[data-field="role"]').forEach((roleField, idx) => {
-                    const roleEls = formContainer.querySelectorAll(`[data-field="role"]`);
-                    const companyEls = formContainer.querySelectorAll(`[data-field="company"]`);
-                    const dateEls = formContainer.querySelectorAll(`[data-field="date"]`);
-                    const descEls = formContainer.querySelectorAll(`[data-field="desc"]`);
+                expCards.forEach((card) => {
+                    const role = card.querySelector('[data-field="role"]')?.value.trim() || '';
+                    const company = card.querySelector('[data-field="company"]')?.value.trim() || '';
+                    const date = card.querySelector('[data-field="date"]')?.value.trim() || '';
+                    const desc = card.querySelector('[data-field="desc"]')?.value.trim() || '';
+                    const detailsRaw = card.querySelector('[data-field="details"]')?.value || '';
+                    const details = detailsRaw.split('\n').map(d => d.trim()).filter(Boolean);
 
-                    if (roleEls[idx]) {
-                        experiences.push({
-                            role: roleEls[idx].value,
-                            company: companyEls[idx]?.value || '',
-                            date: dateEls[idx]?.value || '',
-                            desc: descEls[idx]?.value || '',
-                            details: []
-                        });
+                    if (role) {
+                        experiences.push({ role, company, date, desc, details });
                     }
                 });
                 updatedData.experience = experiences;
             } else {
                 const inputs = formContainer.querySelectorAll('input, textarea');
-                const sectionUpdate = { ...window.siteContent[currentSection] };
+                const sectionUpdate = { ...(currentSiteContent[currentSection] || {}) };
                 inputs.forEach(input => {
                     const key = input.dataset.key;
-                    sectionUpdate[key] = input.value;
+                    if (key) {
+                        sectionUpdate[key] = input.value;
+                    }
                 });
                 updatedData[currentSection] = sectionUpdate;
             }
@@ -408,6 +391,7 @@ const { initialData } = Astro.props;
             });
 
             if (response.ok) {
+                currentSiteContent = updatedData;
                 window.location.reload();
             } else {
                 let message = 'Failed to save changes.';
@@ -415,6 +399,14 @@ const { initialData } = Astro.props;
                     const body = await response.json();
                     if (body?.error) {
                         message = body.error;
+                        if (typeof message === 'string' && message.trim().startsWith('{')) {
+                            try {
+                                const parsed = JSON.parse(message);
+                                if (parsed.message) {
+                                    message = `GitHub Error: ${parsed.message}${parsed.documentation_url ? ' (' + parsed.documentation_url + ')' : ''}`;
+                                }
+                            } catch {}
+                        }
                     }
                 } catch {
                     const fallbackText = await response.text();
@@ -426,9 +418,10 @@ const { initialData } = Astro.props;
             }
         } catch (err) {
             console.error(err);
-            alert('Error: ' + err.message);
+            alert('Error: ' + (err instanceof Error ? err.message : String(err)));
         } finally {
-            btn.innerText = 'SAVE CHANGES';
+            btn.textContent = 'Save Changes';
+            btn.removeAttribute('disabled');
         }
     };
 </script>

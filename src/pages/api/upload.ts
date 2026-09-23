@@ -1,37 +1,26 @@
 import type { APIRoute } from 'astro';
-import { AUTH_CONFIGURED, isAuthenticated, isTrustedOrigin } from '../../lib/auth';
-import { CAN_WRITE_RUNTIME_CONTENT } from '../../lib/content';
+import { isAuthConfigured, isAuthenticated, isTrustedOrigin, getEnv } from '../../lib/auth';
+import {
+    canWriteRuntimeContent,
+    getContentRepoOwner,
+    getContentRepoName,
+    getContentRepoBranch,
+    getGithubToken,
+    hasGithubContentConfig
+} from '../../lib/content';
 import crypto from 'node:crypto';
-import fs from 'node:fs';
+import { promises as fsp } from 'node:fs';
 import path from 'node:path';
 
 const MAX_UPLOAD_SIZE = 5 * 1024 * 1024;
 const ALLOWED_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif']);
 const GITHUB_API_BASE = 'https://api.github.com';
-const runtimeEnv = process.env;
-
-function getContentRepoOwner(): string {
-    return runtimeEnv.CONTENT_REPO_OWNER || '';
-}
-
-function getContentRepoName(): string {
-    return runtimeEnv.CONTENT_REPO_NAME || '';
-}
-
-function getContentRepoBranch(): string {
-    return runtimeEnv.CONTENT_REPO_BRANCH || 'main';
-}
 
 function getContentRepoUploadPath(): string {
-    return runtimeEnv.CONTENT_REPO_UPLOAD_PATH || 'public/uploads';
-}
-
-function getGithubToken(): string {
-    return runtimeEnv.GITHUB_TOKEN || '';
-}
-
-function hasGithubUploadConfig(): boolean {
-    return Boolean(getContentRepoOwner() && getContentRepoName() && getGithubToken());
+    const configured = getEnv('CONTENT_REPO_UPLOAD_PATH');
+    return configured && configured !== 'path/to/public/uploads'
+        ? configured
+        : 'public/uploads';
 }
 
 function json(data: unknown, status: number) {
@@ -58,20 +47,20 @@ function hasValidImageSignature(buffer: Buffer): boolean {
 }
 
 export const POST: APIRoute = async ({ request, cookies }) => {
-    if (!AUTH_CONFIGURED) {
+    if (!isAuthConfigured()) {
         return json({ error: 'Editor access is not configured' }, 503);
     }
 
     if (!isTrustedOrigin(request)) {
-            return json({ error: 'Forbidden origin' }, 403);
+        return json({ error: 'Forbidden origin' }, 403);
     }
 
-  if (!isAuthenticated(cookies)) {
-            return json({ error: 'Unauthorized' }, 401);
-  }
+    if (!isAuthenticated(cookies)) {
+        return json({ error: 'Unauthorized' }, 401);
+    }
 
-    if (!CAN_WRITE_RUNTIME_CONTENT) {
-            return json({ error: 'Live uploads are not configured for this deployment.' }, 501);
+    if (!canWriteRuntimeContent()) {
+        return json({ error: 'Live uploads are not configured for this deployment. Ensure GITHUB_TOKEN is configured in Vercel environment variables.' }, 501);
     }
 
   try {
@@ -103,19 +92,23 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       const fileName = `${Date.now()}-${crypto.randomUUID()}${originalExt}`;
       const uploadPath = path.posix.join(getContentRepoUploadPath().replace(/\\/g, '/'), fileName);
 
-      if (hasGithubUploadConfig()) {
+      if (hasGithubContentConfig()) {
           const CONTENT_REPO_OWNER = getContentRepoOwner();
           const CONTENT_REPO_NAME = getContentRepoName();
           const CONTENT_REPO_BRANCH = getContentRepoBranch();
           const GITHUB_TOKEN = getGithubToken();
+          const GITHUB_USER_AGENT = 'Pratham-Portfolio-CMS/1.0 (+https://prathudev.in)';
 
           const existingFileResponse = await fetch(
               `${GITHUB_API_BASE}/repos/${CONTENT_REPO_OWNER}/${CONTENT_REPO_NAME}/contents/${uploadPath}?ref=${encodeURIComponent(CONTENT_REPO_BRANCH)}`,
               {
+                  cache: 'no-store',
                   headers: {
                       Authorization: `Bearer ${GITHUB_TOKEN}`,
                       Accept: 'application/vnd.github+json',
-                      'X-GitHub-Api-Version': '2022-11-28'
+                      'User-Agent': GITHUB_USER_AGENT,
+                      'X-GitHub-Api-Version': '2022-11-28',
+                      'Cache-Control': 'no-cache'
                   }
               }
           );
@@ -124,6 +117,14 @@ export const POST: APIRoute = async ({ request, cookies }) => {
           if (existingFileResponse.ok) {
               const existingJson = await existingFileResponse.json() as { sha?: string };
               sha = existingJson.sha;
+          } else if (existingFileResponse.status === 401) {
+              return json({ error: 'GitHub authentication failed (401 Bad credentials). Check GITHUB_TOKEN in Vercel environment variables.' }, 500);
+          } else if (existingFileResponse.status === 403) {
+              return json({ error: 'GitHub upload forbidden (403). Ensure GITHUB_TOKEN has "Contents: Read and write" permission.' }, 500);
+          } else if (existingFileResponse.status !== 404) {
+              const text = await existingFileResponse.text();
+              console.error('GitHub file lookup failed:', existingFileResponse.status, text);
+              return json({ error: `GitHub upload lookup failed (${existingFileResponse.status})` }, 500);
           }
 
           const response = await fetch(
@@ -133,6 +134,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
                   headers: {
                       Authorization: `Bearer ${GITHUB_TOKEN}`,
                       Accept: 'application/vnd.github+json',
+                      'User-Agent': GITHUB_USER_AGENT,
                       'Content-Type': 'application/json',
                       'X-GitHub-Api-Version': '2022-11-28'
                   },
@@ -148,16 +150,18 @@ export const POST: APIRoute = async ({ request, cookies }) => {
           if (!response.ok) {
               const text = await response.text();
               console.error('GitHub upload failed:', response.status, text);
-              return json({ error: 'Upload failed' }, 500);
+              if (response.status === 401) {
+                  return json({ error: 'GitHub authentication failed (401 Bad credentials). Check GITHUB_TOKEN in Vercel environment variables.' }, 500);
+              }
+              if (response.status === 403) {
+                  return json({ error: 'GitHub upload permission denied (403). Ensure token has "Contents: Read and write" permission.' }, 500);
+              }
+              return json({ error: `Upload failed with status ${response.status}` }, 500);
           }
       } else {
           const uploadDir = path.join(process.cwd(), 'public', 'uploads');
-
-          if (!fs.existsSync(uploadDir)) {
-              fs.mkdirSync(uploadDir, { recursive: true });
-          }
-
-          fs.writeFileSync(path.join(uploadDir, fileName), buffer);
+          await fsp.mkdir(uploadDir, { recursive: true });
+          await fsp.writeFile(path.join(uploadDir, fileName), buffer);
       }
       
       return json({ 

@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
-import { AUTH_CONFIGURED, isAuthenticated, isTrustedOrigin } from '../../../lib/auth';
-import { CAN_WRITE_RUNTIME_CONTENT, updateContent } from '../../../lib/content';
+import { isAuthConfigured, isAuthenticated, isTrustedOrigin } from '../../../lib/auth';
+import { canWriteRuntimeContent, updateContent, validateSiteContent } from '../../../lib/content';
 
 const MAX_CONTENT_BYTES = 1024 * 1024;
 
@@ -37,23 +37,23 @@ function hasUnsafeKeys(value: unknown): boolean {
 }
 
 export const POST: APIRoute = async ({ request, cookies }) => {
-    if (!AUTH_CONFIGURED) {
-    return json({ error: 'Editor access is not configured' }, 503);
+    if (!isAuthConfigured()) {
+        return json({ error: 'Editor access is not configured' }, 503);
     }
 
     if (!isTrustedOrigin(request)) {
-            return json({ error: 'Forbidden origin' }, 403);
+        return json({ error: 'Forbidden origin' }, 403);
     }
 
-  if (!isAuthenticated(cookies)) {
-            return json({ error: 'Unauthorized' }, 401);
-  }
+    if (!isAuthenticated(cookies)) {
+        return json({ error: 'Unauthorized' }, 401);
+    }
 
-  if (!CAN_WRITE_RUNTIME_CONTENT) {
+    if (!canWriteRuntimeContent()) {
         return json({
-            error: 'Live editor writes are not configured for this deployment.'
+            error: 'Live editor writes are not configured for this deployment. Ensure GITHUB_TOKEN is configured in Vercel environment variables.'
         }, 501);
-  }
+    }
 
   try {
         const contentType = request.headers.get('content-type') || '';
@@ -74,7 +74,12 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
             if (hasUnsafeKeys(data)) {
                     return json({ error: 'Unsafe payload' }, 400);
-      }
+            }
+
+            const validation = validateSiteContent(data);
+            if (!validation.valid) {
+                    return json({ error: validation.error || 'Invalid content format' }, 400);
+            }
 
         const success = await updateContent(data);
       

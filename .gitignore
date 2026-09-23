@@ -27,3 +27,8 @@ pnpm-debug.log*
 *.swp
 *.swo
 .DS_Store
+
+# AI Review Agents & Analytics (local only)
+.codemate/
+.cora/
+

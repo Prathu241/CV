@@ -5,9 +5,13 @@ import { getContent } from '../lib/content';
 import { isAuthenticated } from '../lib/auth';
 import EditModal from '../components/EditModal.astro';
 
+const isLoggedIn = isAuthenticated(Astro.cookies);
+if (isLoggedIn) {
+  Astro.response.headers.set('Cache-Control', 'private, no-cache, no-store, must-revalidate');
+}
+
 const data = await getContent();
 const { skills, experience, projects, education, socialLinks, profile } = data;
-const isLoggedIn = isAuthenticated(Astro.cookies);
 ---
 
 <Layout title="Pratham Sarawad | Portfolio">

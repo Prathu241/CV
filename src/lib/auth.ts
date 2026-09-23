@@ -1,19 +1,41 @@
 import crypto from 'node:crypto';
 
-const DEV_EDITOR_USER = '';
-const DEV_EDITOR_PASS = '';
-const DEV_SESSION_SECRET = '';
-const runtimeEnv = process.env;
+export function getEnv(key: string): string {
+    return (process.env[key] || (import.meta.env as any)[key] || '').trim();
+}
 
-export const EDITOR_USER = runtimeEnv.EDITOR_USER || (import.meta.env.DEV ? DEV_EDITOR_USER : '');
-export const EDITOR_PASS = runtimeEnv.EDITOR_PASS || (import.meta.env.DEV ? DEV_EDITOR_PASS : '');
-const HAS_PROD_EDITOR_USER = Boolean(runtimeEnv.EDITOR_USER);
-const HAS_PROD_EDITOR_PASS = Boolean(runtimeEnv.EDITOR_PASS);
-const HAS_PROD_SESSION_SECRET = Boolean(runtimeEnv.SESSION_SECRET);
-export const AUTH_CONFIGURED = import.meta.env.DEV || (HAS_PROD_EDITOR_USER && HAS_PROD_EDITOR_PASS && HAS_PROD_SESSION_SECRET);
+export function getEditorUser(): string {
+    return getEnv('EDITOR_USER');
+}
 
-const SESSION_SECRET = runtimeEnv.SESSION_SECRET || (import.meta.env.DEV ? DEV_SESSION_SECRET : crypto.randomBytes(32).toString('hex'));
-const SESSION_TTL_SECONDS = Number(runtimeEnv.SESSION_TTL_SECONDS || 60 * 60 * 8); // 8 hours
+export function getEditorPass(): string {
+    return getEnv('EDITOR_PASS');
+}
+
+export function isAuthConfigured(): boolean {
+    if (import.meta.env.DEV) return true;
+    return Boolean(getEditorUser() && getEditorPass());
+}
+
+export const AUTH_CONFIGURED = isAuthConfigured();
+export const EDITOR_USER = getEditorUser();
+export const EDITOR_PASS = getEditorPass();
+
+function getSessionSecret(): string {
+    const configured = getEnv('SESSION_SECRET');
+    if (configured && configured !== 'change-this-to-a-long-random-secret') {
+        return configured;
+    }
+    // Stable deterministic fallback so serverless cold starts across instances don't invalidate active sessions
+    return crypto.createHash('sha256')
+        .update('prathu-dev-portfolio-stable-session-secret-' + (getEditorUser() || 'pratham-portfolio'))
+        .digest('hex');
+}
+
+export function getSessionTtl(): number {
+    const rawTtl = Number.parseInt(getEnv('SESSION_TTL_SECONDS'), 10);
+    return Number.isInteger(rawTtl) && rawTtl > 0 ? rawTtl : 60 * 60 * 8; // 8 hours default
+}
 
 export const COOKIE_NAME = 'site_admin_session';
 
@@ -26,10 +48,13 @@ function b64urlDecode(value: string): string {
 }
 
 function sign(value: string): string {
-    return crypto.createHmac('sha256', SESSION_SECRET).update(value).digest('base64url');
+    return crypto.createHmac('sha256', getSessionSecret()).update(value).digest('base64url');
 }
 
 function safeCompare(a: string, b: string): boolean {
+    if (typeof a !== 'string' || typeof b !== 'string') {
+        return false;
+    }
     const aBuf = Buffer.from(a);
     const bBuf = Buffer.from(b);
     if (aBuf.length !== bBuf.length) {
@@ -39,18 +64,73 @@ function safeCompare(a: string, b: string): boolean {
 }
 
 export function credentialsMatch(username: string, password: string): boolean {
-    return safeCompare(username, EDITOR_USER) && safeCompare(password, EDITOR_PASS);
+    const expectedUser = getEditorUser();
+    const expectedPass = getEditorPass();
+    if (!expectedUser || !expectedPass) {
+        return false;
+    }
+    return safeCompare(username, expectedUser) && safeCompare(password, expectedPass);
 }
 
 export function isTrustedOrigin(request: Request): boolean {
+    if (import.meta.env.DEV) {
+        return true;
+    }
+
     const origin = request.headers.get('origin');
-    if (!origin) {
+    const referer = request.headers.get('referer');
+    const source = origin || referer;
+    if (!source) {
         return false;
     }
 
     try {
+        const sourceUrl = new URL(source);
         const requestUrl = new URL(request.url);
-        return origin === requestUrl.origin;
+
+        // 1. Exact match with requestUrl origin
+        if (sourceUrl.origin === requestUrl.origin) {
+            return true;
+        }
+
+        // 2. Match with forwarded host header or Host header (Vercel / reverse proxy)
+        const hostHeader = request.headers.get('x-forwarded-host') || request.headers.get('host');
+        if (hostHeader) {
+            const cleanHost = hostHeader.split(',')[0].trim().split(':')[0].toLowerCase();
+            const sourceHost = sourceUrl.hostname.toLowerCase();
+            if (sourceHost === cleanHost) {
+                return true;
+            }
+        }
+
+        // 3. Explicitly allow production custom domain & deployment domains
+        const sourceHostname = sourceUrl.hostname.toLowerCase();
+        if (
+            sourceHostname === 'prathudev.in' ||
+            sourceHostname.endsWith('.prathudev.in') ||
+            sourceHostname.endsWith('.vercel.app') ||
+            sourceHostname === 'localhost' ||
+            sourceHostname === '127.0.0.1'
+        ) {
+            return true;
+        }
+
+        // 4. Match with any custom domain configured in env
+        const customDomain = getEnv('CUSTOM_DOMAIN').toLowerCase();
+        if (customDomain && (sourceHostname === customDomain || sourceHostname.endsWith('.' + customDomain))) {
+            return true;
+        }
+
+        const siteUrl = getEnv('SITE_URL');
+        if (siteUrl) {
+            try {
+                if (sourceHostname === new URL(siteUrl).hostname.toLowerCase()) {
+                    return true;
+                }
+            } catch {}
+        }
+
+        return false;
     } catch {
         return false;
     }
@@ -74,9 +154,16 @@ export function isAuthenticated(cookies: any): boolean {
     }
 
     try {
-        const payload = JSON.parse(b64urlDecode(payloadB64)) as { u?: string; exp?: number };
+        const payload = JSON.parse(b64urlDecode(payloadB64)) as { u?: string; exp?: number; iat?: number; v?: number };
         const now = Math.floor(Date.now() / 1000);
-        return Boolean(payload?.u === EDITOR_USER && payload?.exp && payload.exp > now);
+        const expectedUser = getEditorUser();
+        return Boolean(
+            payload &&
+            typeof payload.u === 'string' &&
+            (!expectedUser || payload.u === expectedUser) &&
+            Number.isInteger(payload.exp) &&
+            payload.exp > now
+        );
     } catch {
         return false;
     }
@@ -84,10 +171,12 @@ export function isAuthenticated(cookies: any): boolean {
 
 export function createSession(cookies: any): void {
     const now = Math.floor(Date.now() / 1000);
+    const ttl = getSessionTtl();
     const payload = {
-        u: EDITOR_USER,
+        v: 1,
+        u: getEditorUser(),
         iat: now,
-        exp: now + SESSION_TTL_SECONDS,
+        exp: now + ttl,
         n: crypto.randomBytes(12).toString('hex')
     };
 
@@ -98,11 +187,12 @@ export function createSession(cookies: any): void {
         path: '/',
         httpOnly: true,
         secure: !import.meta.env.DEV,
-        sameSite: 'strict',
-        maxAge: SESSION_TTL_SECONDS
+        sameSite: 'lax',
+        maxAge: ttl
     });
 }
 
 export function destroySession(cookies: any): void {
     cookies.delete(COOKIE_NAME, { path: '/' });
 }
+

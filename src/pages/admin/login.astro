@@ -1,6 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import { AUTH_CONFIGURED, isAuthenticated } from '../../lib/auth';
+import { isAuthConfigured, isAuthenticated } from '../../lib/auth';
 
 Astro.response.headers.set('Cache-Control', 'no-store');
 Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
@@ -9,7 +9,7 @@ if (isAuthenticated(Astro.cookies)) {
   return Astro.redirect('/');
 }
 
-const authConfigured = AUTH_CONFIGURED;
+const authConfigured = isAuthConfigured();
 ---
 
 <Layout title="Admin Login | Pratham Sarawad">
